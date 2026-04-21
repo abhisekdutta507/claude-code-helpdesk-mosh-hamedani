@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs",
+      "Bash(curl -fsSL https://bun.sh/install)",
+      "Bash(bash)",
+      "Bash(export PATH=\"$HOME/.bun/bin:$PATH\")",
+      "Bash(bun --version)",
+      "Bash(bun create *)",
+      "Bash(bun add *)",
+      "Bash(bun install *)",
+      "Bash(timeout 5 bun index.ts)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(bun index.ts)",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(kill %1)",
+      "Bash(bun run *)",
+      "Bash(pkill -f \"bun.*index.ts\")",
+      "Bash(pkill -f \"vite\")",
+      "Bash(bun --hot index.ts)",
+      "Bash(echo \"Backend PID: $!\")",
+      "Bash(echo \"Frontend PID: $!\")",
+      "Read(//private/tmp/**)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
+    ]
+  }
+}
