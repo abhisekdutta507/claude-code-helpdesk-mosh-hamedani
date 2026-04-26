@@ -71,3 +71,8 @@ In the frontend app. in @App.tsx call the /api/health api and display a message.
 ```text
 Include project overview, tech stack & key conventions in the CLAUDE.md.
 ```
+
+```text
+Set up Prisma with postgres. Connect the app to postgres database.
+```
+
