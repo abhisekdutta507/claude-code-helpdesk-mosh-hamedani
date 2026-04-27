@@ -14,7 +14,7 @@
 - **Prisma** — ORM
 
 ## Authentication
-- Database sessions (session stored in PostgreSQL via Prisma)
+- **Better Auth** — email/password auth with database sessions stored in PostgreSQL via Prisma
 
 ## AI
 - **Claude API (Anthropic)** — ticket classification, summaries, and suggested replies

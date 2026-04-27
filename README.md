@@ -14,6 +14,13 @@ bun run dev
 
 Runs on **http://localhost:3000**
 
+To seed the initial admin user (run once after migration):
+
+```bash
+cd backend
+bun run seed
+```
+
 ### Frontend
 
 ```bash
@@ -31,7 +38,7 @@ Runs on **http://localhost:5173**
 | Frontend | React 19, TypeScript, Vite, Tailwind CSS, shadcn/ui, React Router |
 | Backend | Node.js, Express 5, TypeScript |
 | Database | PostgreSQL (Neon), Prisma ORM |
-| Auth | Database sessions |
+| Auth | Better Auth (email/password, database sessions) |
 | AI | Claude API (Anthropic) |
 | Email | SendGrid |
 | Deployment | Vercel (frontend), Neon (database) |
@@ -76,3 +83,16 @@ Include project overview, tech stack & key conventions in the CLAUDE.md.
 Set up Prisma with postgres. Connect the app to postgres database.
 ```
 
+- Install better auth for authentication.
+
+```bash
+npx skills add better-auth/skills
+```
+
+```text
+set up better auth with email/password and use database sessions. bare minimum. no ui. ask me clarifying questions.
+```
+
+```text
+update the project implementation-plan.md, project-scope.md, README.md & tech-stack.md if needed
+```

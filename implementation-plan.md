@@ -19,16 +19,17 @@
 
 ## Phase 3 — Database & Authentication
 
-- [ ] Provision Neon PostgreSQL instance
-- [ ] Initialize Prisma and connect to Neon
-- [ ] Define `User` schema (id, email, password hash, role: admin/agent)
-- [ ] Define `Session` schema
-- [ ] Run initial migration
-- [ ] Implement session middleware in Express
-- [ ] Build login and logout API endpoints
+- [ ] Provision Neon PostgreSQL instance (local PostgreSQL used for development)
+- [x] Initialize Prisma and connect to PostgreSQL
+- [x] Define `User` schema (id, email, role: admin/agent) — managed by Better Auth
+- [x] Define `Session` schema — managed by Better Auth
+- [x] Run initial migration
+- [x] Implement session middleware in Express (`middleware/requireAuth.ts`)
+- [x] Build login and logout API endpoints — provided by Better Auth (`/api/auth/*`)
 - [ ] Build login page (frontend)
-- [ ] Protect routes with auth middleware (backend + frontend)
-- [ ] Seed admin user on first deploy
+- [x] Protect routes with auth middleware (backend — `requireAuth` middleware)
+- [ ] Protect routes with auth middleware (frontend — route guards)
+- [x] Seed admin user on first deploy (`bun run seed`)
 
 ---
 
