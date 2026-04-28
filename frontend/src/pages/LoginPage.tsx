@@ -13,6 +13,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { AlertCircle } from 'lucide-react'
 
 const loginSchema = z.object({
   email: z.email({ error: 'Enter a valid email address' }),
@@ -91,7 +93,10 @@ export default function LoginPage() {
               )}
             </div>
             {errors.root && (
-              <p className="text-sm text-destructive">{errors.root.message}</p>
+              <Alert variant="destructive">
+                <AlertCircle />
+                <AlertDescription>{errors.root.message}</AlertDescription>
+              </Alert>
             )}
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? 'Signing in…' : 'Sign in'}

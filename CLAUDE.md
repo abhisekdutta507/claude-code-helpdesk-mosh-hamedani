@@ -46,6 +46,32 @@ Use `bun` for everything. Never use npm, yarn, or pnpm.
 - **TypeScript** — strict mode enabled in both apps; no `any` types
 - **Imports** — use ESM (`import`/`export`) throughout; both apps are `"type": "module"`
 
+## Authentication
+
+- Auth library: `better-auth` via `authClient` (from `@/lib/auth-client`)
+- Sessions stored in PostgreSQL via Prisma
+- Check session state with `authClient.useSession()` → returns `{ data: session, isPending }`
+- Sign in with `authClient.signIn.email(data)` → returns `{ error: authError }`
+- Server-side auth errors are surfaced via React Hook Form's `setError('root', { message: ... })`
+- Post-login redirect uses React Router's `<Navigate to="/" replace />`
+
+## shadcn/ui
+
+- Add components with `bunx shadcn@latest add <component>` (outputs to `frontend/src/components/ui/`)
+- **Installed:** Button, Input, Label, Card, Alert
+- **Alert — destructive variant:** Default is subtle (white bg, colored text only). Customized to colorful red-tinted style in `alert.tsx`:
+  ```
+  destructive: "border-destructive/40 bg-destructive/10 text-destructive *:data-[slot=alert-description]:text-destructive *:[svg]:text-destructive"
+  ```
+- Alert's CSS grid (`has-[>svg]:grid-cols-[auto_1fr]`) automatically positions a sibling SVG icon alongside `AlertDescription` — no extra wrapper needed
+
+## Tailwind CSS
+
+- Tailwind v4 via `@import "tailwindcss"` in `frontend/src/index.css`
+- Design tokens: CSS custom properties in `:root` / `.dark`, mapped in `@theme inline {}`
+- Opacity modifier syntax: `bg-destructive/10`, `border-destructive/40` (no plugin needed)
+- **Chrome autofill override** (in `@layer base` of `index.css`): uses inset `box-shadow` with `!important` and `var(--card)` to match card background. Requires `-webkit-autofill:active` and `input:autofill` selectors — without them Chrome still shows blue on some interactions. Use `var(--card)` (not `var(--background)`) for inputs inside Card components.
+
 ## Library Documentation
 
 Always use Context7 to fetch up-to-date docs before working with any library. Never rely solely on training data for API usage or configuration.
