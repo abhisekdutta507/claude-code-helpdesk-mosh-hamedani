@@ -47,7 +47,9 @@
       "Bash(curl -s -X POST http://localhost:3000/api/auth/sign-up/email -H 'Content-Type: application/json' -d '{\"email\":\"another@example.com\",\"password\":\"password123\",\"name\":\"Test\"}')",
       "Bash(xargs cat *)",
       "Bash(bunx tsc *)",
-      "Bash(bunx shadcn@latest add alert)"
+      "Bash(bunx shadcn@latest add alert)",
+      "Bash(rm \"/Users/abhisekdutta/Projects/Learning Materials/Claude Code Trainings/claude-code-helpdesk-mosh-hamedani/.claude/skills/better-auth-best-practices\")",
+      "Bash(mkdir \"/Users/abhisekdutta/Projects/Learning Materials/Claude Code Trainings/claude-code-helpdesk-mosh-hamedani/.claude/skills/better-auth-best-practices\")"
     ]
   }
 }

@@ -24,6 +24,21 @@ A ticket management system that uses AI to automatically classify, summarize, an
 └── implementation-plan.md
 ```
 
+## Claude Code Configuration
+
+### Agents vs Skills
+
+Two different Claude Code features live under `.claude/`, each with its own convention:
+
+| Feature | Path | Convention | Purpose |
+|---|---|---|---|
+| Agent | `.claude/agents/<name>.md` | Single file | Autonomous subagent Claude spawns to handle tasks |
+| Skill | `.claude/skills/<name>/SKILL.md` | Folder + file | User-invokable slash command (e.g. `/<name>`) |
+
+**Agents** are a single `.md` file because that's all they need — just a system prompt.
+
+**Skills** use a folder because a skill can bundle multiple supporting files alongside `SKILL.md` (helper scripts, templates, config snippets, etc.). The folder is the skill's package.
+
 ## Getting Started
 
 ### Prerequisites
