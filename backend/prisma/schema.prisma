@@ -14,18 +14,6 @@ enum UserRole {
   AGENT
 }
 
-enum TicketStatus {
-  OPEN
-  RESOLVED
-  CLOSED
-}
-
-enum TicketCategory {
-  GENERAL_QUESTION
-  TECHNICAL_QUESTION
-  REFUND_REQUEST
-}
-
 // ─── Better Auth core tables ──────────────────────────────────────────────────
 
 model User {
@@ -40,7 +28,6 @@ model User {
 
   sessions Session[]
   accounts Account[]
-  tickets  Ticket[]  @relation("AgentTickets")
 
   @@map("user")
 }
@@ -91,33 +78,3 @@ model Verification {
   @@map("verification")
 }
 
-// ─── Application tables ───────────────────────────────────────────────────────
-
-model Ticket {
-  id        String         @id @default(cuid())
-  email     String
-  subject   String
-  body      String
-  status    TicketStatus   @default(OPEN)
-  category  TicketCategory
-  summary   String?
-  agentId   String?
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  agent     User?          @relation("AgentTickets", fields: [agentId], references: [id])
-  replies   Reply[]
-
-  @@index([agentId])
-  @@index([status])
-}
-
-model Reply {
-  id        String   @id @default(cuid())
-  ticketId  String
-  content   String
-  isAI      Boolean  @default(false)
-  createdAt DateTime @default(now())
-  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-
-  @@index([ticketId])
-}

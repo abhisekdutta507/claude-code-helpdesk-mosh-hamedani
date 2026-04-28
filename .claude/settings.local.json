@@ -23,7 +23,21 @@
       "Bash(echo \"Frontend PID: $!\")",
       "Read(//private/tmp/**)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(pg_isready *)",
+      "Bash(psql *)",
+      "Bash(brew services *)",
+      "Bash(nc -z localhost 5432)",
+      "Bash(echo \"PID: $!\")",
+      "Bash(curl -s http://localhost:3000/api/health)",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/sign-up/email -H 'Content-Type: application/json' -d '{\"email\":\"test@example.com\",\"password\":\"Password123!\",\"name\":\"Test User\"}')",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/sign-in/email -H 'Content-Type: application/json' -d '{\"email\":\"test@example.com\",\"password\":\"Password123!\"}' -c /tmp/auth-cookies.txt)",
+      "Bash(curl -s http://localhost:3000/api/auth/get-session -H 'Authorization: Bearer Wi5Zmgt0msrP7QbjvXhO1QNvBCWqFyj3')",
+      "Bash(curl -s http://localhost:3000/api/auth/get-session -b /tmp/auth-cookies.txt)",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/sign-out -b /tmp/auth-cookies.txt -c /tmp/auth-cookies.txt)",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/sign-out -H 'Origin: http://localhost:5173' -b /tmp/auth-cookies.txt -c /tmp/auth-cookies.txt)",
+      "Bash(bunx prisma *)",
+      "Bash(git *)"
     ]
   }
 }
