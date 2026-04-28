@@ -54,6 +54,23 @@ Use `bun` for everything. Never use npm, yarn, or pnpm.
 - Sign in with `authClient.signIn.email(data)` → returns `{ error: authError }`
 - Server-side auth errors are surfaced via React Hook Form's `setError('root', { message: ... })`
 - Post-login redirect uses React Router's `<Navigate to="/" replace />`
+- `role` field typed on the client via `inferAdditionalFields` plugin (from `better-auth/client/plugins`) in `auth-client.ts` — exposes `session.user.role` as `'ADMIN' | 'AGENT'`
+
+## Route Protection
+
+- `ProtectedRoute` (`frontend/src/components/ProtectedRoute.tsx`) — redirects unauthenticated users to `/login`
+- `AdminRoute` (`frontend/src/components/AdminRoute.tsx`) — redirects unauthenticated users to `/login`, non-admins to `/`
+- Wrap routes in `App.tsx` with the appropriate guard: `<Route element={<ProtectedRoute />}>` or `<Route element={<AdminRoute />}>`
+
+## Constants
+
+- Shared frontend constants live in `frontend/src/lib/constants.ts`
+- **Do not use TypeScript `enum`** — `erasableSyntaxOnly` is enabled; use a `const` object with `as const` and a companion type instead:
+  ```ts
+  export const UserRole = { ADMIN: 'ADMIN', AGENT: 'AGENT' } as const
+  export type UserRole = (typeof UserRole)[keyof typeof UserRole]
+  ```
+- `UserRole` is defined here and used in `auth-client.ts` and `AdminRoute.tsx`
 
 ## shadcn/ui
 
