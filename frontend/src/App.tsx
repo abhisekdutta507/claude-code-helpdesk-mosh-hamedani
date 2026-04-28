@@ -16,7 +16,7 @@ export default function App() {
         <Route element={<AdminRoute />}>
           <Route path="/users" element={<UsersPage />} />
         </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   )
