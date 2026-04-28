@@ -137,6 +137,14 @@ use the email: abhisek.dutta.507@gmail.com.
 store the credential in a .env. use the credentials from .env.
 ```
 
+**Testing**
+
+Playwright is the most modern solution for e2e testing.
+
+```text
+setup playwright with a separate database for testing
+```
+
 **Housekeeping**
 
 ```text
