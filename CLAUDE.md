@@ -103,6 +103,8 @@ Applied in `backend/index.ts` in this order: `helmet` → `cors` → `authLimite
 
 Rate limiting is handled by `express-rate-limit` at the Express middleware layer (`backend/middleware/rateLimiter.ts`).
 
+**Production-only:** All limiters are no-ops when `NODE_ENV !== 'production'` — no limiter instance or in-memory store is created in dev or test.
+
 ```ts
 import { authLimiter, apiLimiter, createRateLimiter } from './middleware/rateLimiter'
 ```
@@ -146,6 +148,34 @@ apiRouter.post('/something-sensitive', createRateLimiter(5, 60), handler)
 - Design tokens: CSS custom properties in `:root` / `.dark`, mapped in `@theme inline {}`
 - Opacity modifier syntax: `bg-destructive/10`, `border-destructive/40` (no plugin needed)
 - **Chrome autofill override** (in `@layer base` of `index.css`): uses inset `box-shadow` with `!important` and `var(--card)` to match card background. Requires `-webkit-autofill:active` and `input:autofill` selectors — without them Chrome still shows blue on some interactions. Use `var(--card)` (not `var(--background)`) for inputs inside Card components.
+
+## E2E Testing (Playwright)
+
+Playwright tests live in `frontend/e2e/`. Run from `frontend/`:
+
+```sh
+bun run test:e2e          # headless run
+bun run test:e2e:ui       # interactive Playwright UI
+bun run test:e2e:report   # open last HTML report
+```
+
+### How it works
+
+1. **`global.setup.ts`** runs once before any test project: applies Prisma migrations to the test DB, truncates all data, then runs `bun run seed` — so every run starts from a clean known state.
+2. **`auth.setup.ts`** (the `setup` project) signs in as `admin@test.local` via the UI and saves session storage to `e2e/.auth/admin.json`.
+3. **`chromium` project** depends on `setup` and injects the saved auth state, so tests start already logged in.
+
+### Test database
+
+The backend is started with `NODE_ENV=test` by the `webServer` config, which loads `backend/.env.test` (points to a separate test database — never the dev DB). The test DB URL must be set in `backend/.env.test` as `DATABASE_URL`.
+
+`e2e/.auth/` and `playwright-report/` are gitignored.
+
+### Auth credentials (seeded)
+
+| Email | Password | Role |
+|---|---|---|
+| `admin@test.local` | `TestAdmin@1234!` | ADMIN |
 
 ## Library Documentation
 
