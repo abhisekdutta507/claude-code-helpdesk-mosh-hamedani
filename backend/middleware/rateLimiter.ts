@@ -1,6 +1,12 @@
 import { rateLimit } from "express-rate-limit";
+import type { RequestHandler } from "express";
 
-function createRateLimiter(max: number, windowSec: number) {
+const isProd = process.env.NODE_ENV === "production";
+
+const noop: RequestHandler = (_req, _res, next) => next();
+
+function createRateLimiter(max: number, windowSec: number): RequestHandler {
+  if (!isProd) return noop;
   return rateLimit({
     windowMs: windowSec * 1000,
     max,
