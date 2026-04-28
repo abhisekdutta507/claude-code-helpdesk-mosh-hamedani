@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { createAuthMiddleware } from "better-auth/api";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./db";
 
@@ -21,4 +22,16 @@ export const auth = betterAuth({
     },
   },
   trustedOrigins: [process.env.CORS_ORIGIN ?? "http://localhost:5173"],
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path === "/sign-in/email" && ctx.body?.email) {
+        return {
+          context: {
+            ...ctx,
+            body: { ...ctx.body, email: ctx.body.email.toLowerCase() },
+          },
+        };
+      }
+    }),
+  },
 });

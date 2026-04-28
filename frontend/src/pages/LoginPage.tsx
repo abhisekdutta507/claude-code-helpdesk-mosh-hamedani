@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { authClient } from '@/lib/auth-client'
 import { Button } from '@/components/ui/button'
@@ -12,13 +14,24 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 
+const loginSchema = z.object({
+  email: z.email({ error: 'Enter a valid email address' }),
+  password: z.string().min(1, { error: 'Password is required' }),
+})
+
+type LoginFormData = z.infer<typeof loginSchema>
+
 export default function LoginPage() {
   const navigate = useNavigate()
   const { data: session, isPending } = authClient.useSession()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+  })
 
   if (isPending) {
     return (
@@ -30,17 +43,11 @@ export default function LoginPage() {
 
   if (session) return <Navigate to="/" replace />
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    setError(null)
-    setIsLoading(true)
-
-    const { error: authError } = await authClient.signIn.email({ email, password })
-
-    setIsLoading(false)
+  async function onSubmit(data: LoginFormData) {
+    const { error: authError } = await authClient.signIn.email(data)
 
     if (authError) {
-      setError(authError.message ?? 'Invalid email or password.')
+      setError('root', { message: authError.message ?? 'Invalid email or password.' })
       return
     }
 
@@ -55,7 +62,7 @@ export default function LoginPage() {
           <CardDescription>Sign in to your account to continue.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
             <div className="flex flex-col gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -63,10 +70,12 @@ export default function LoginPage() {
                 type="email"
                 placeholder="you@example.com"
                 autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                aria-invalid={!!errors.email}
+                {...register('email')}
               />
+              {errors.email && (
+                <p className="text-sm text-destructive">{errors.email.message}</p>
+              )}
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="password">Password</Label>
@@ -74,16 +83,18 @@ export default function LoginPage() {
                 id="password"
                 type="password"
                 autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                aria-invalid={!!errors.password}
+                {...register('password')}
               />
+              {errors.password && (
+                <p className="text-sm text-destructive">{errors.password.message}</p>
+              )}
             </div>
-            {error !== null && (
-              <p className="text-sm text-destructive">{error}</p>
+            {errors.root && (
+              <p className="text-sm text-destructive">{errors.root.message}</p>
             )}
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Signing in…' : 'Sign in'}
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? 'Signing in…' : 'Sign in'}
             </Button>
           </form>
         </CardContent>
