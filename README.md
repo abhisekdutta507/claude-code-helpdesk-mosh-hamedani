@@ -2,35 +2,6 @@
 
 A ticket management system that uses AI to automatically classify, summarize, and suggest replies for support emails — delivering faster, more personalized responses while freeing up agents for complex issues.
 
-## Getting Started
-
-### Backend
-
-```bash
-cd backend
-bun install
-bun run dev
-```
-
-Runs on **http://localhost:3000**
-
-To seed the initial admin user (run once after migration):
-
-```bash
-cd backend
-bun run seed
-```
-
-### Frontend
-
-```bash
-cd frontend
-bun install
-bun run dev
-```
-
-Runs on **http://localhost:5173**
-
 ## Tech Stack
 
 | Layer | Technology |
@@ -47,13 +18,53 @@ Runs on **http://localhost:5173**
 
 ```
 /
-├── frontend/          — React 19 + Vite
-├── backend/           — Express 5 + TypeScript
+├── frontend/          — React 19 + Vite (port 5173)
+├── backend/           — Express 5 + TypeScript (port 3000)
 ├── CLAUDE.md          — AI assistant instructions
 └── implementation-plan.md
 ```
 
+## Getting Started
+
+### Prerequisites
+
+- [Bun](https://bun.sh) installed
+- PostgreSQL database (local or [Neon](https://neon.tech))
+- `.env` files configured in `backend/` (see `.env.example` if available)
+
+### Backend
+
+```bash
+cd backend
+bun install
+bun run dev
+```
+
+Runs on **http://localhost:3000**
+
+To seed the initial admin user (run once after migration):
+
+```bash
+bun run seed
+```
+
+### Frontend
+
+```bash
+cd frontend
+bun install
+bun run dev
+```
+
+Runs on **http://localhost:5173**
+
+---
+
 ## Claude Code Prompts Used to Build This
+
+A log of the prompts used to build this project with Claude Code.
+
+**Kick-off & planning**
 
 ```text
 Read @project-scope.md. Review it and ask me clarifying questions. Help me find gaps or things I haven't thought through.
@@ -67,6 +78,8 @@ Suggest a tech stack for this project.
 Create an implementation plan. Break the project into small tasks and group them into phases.
 ```
 
+**Phase 1 — Core setup**
+
 ```text
 Complete the Phase 1 from @implementation-plan.md use bun as a package manager. And use context7 for up-to-date docs.
 ```
@@ -79,11 +92,15 @@ In the frontend app. in @App.tsx call the /api/health api and display a message.
 Include project overview, tech stack & key conventions in the CLAUDE.md.
 ```
 
+**Database**
+
 ```text
 Set up Prisma with postgres. Connect the app to postgres database.
 ```
 
-- Install better auth for authentication.
+**Authentication**
+
+Install the Better Auth skill, then prompt Claude to set it up:
 
 ```bash
 npx skills add better-auth/skills
@@ -92,6 +109,20 @@ npx skills add better-auth/skills
 ```text
 set up better auth with email/password and use database sessions. bare minimum. no ui. ask me clarifying questions.
 ```
+
+```text
+disable the signup endpoint temporarily
+```
+
+```text
+create a seed script to create an admin user. do not create duplicated users.
+
+use the email: abhisek.dutta.507@gmail.com.
+
+store the credential in a .env. use the credentials from .env.
+```
+
+**Housekeeping**
 
 ```text
 update the project implementation-plan.md, project-scope.md, README.md & tech-stack.md if needed

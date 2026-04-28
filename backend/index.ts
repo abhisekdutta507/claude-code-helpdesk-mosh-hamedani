@@ -6,7 +6,12 @@ import { auth } from "./auth";
 const app = express();
 const PORT = process.env.PORT ?? 3000;
 
-app.use(cors({ origin: process.env.CORS_ORIGIN ?? "http://localhost:5173" }));
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN ?? "http://localhost:5173",
+    credentials: true,
+  })
+);
 
 app.all("/api/auth/*splat", toNodeHandler(auth));
 

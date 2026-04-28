@@ -37,7 +37,14 @@
       "Bash(curl -s -X POST http://localhost:3000/api/auth/sign-out -b /tmp/auth-cookies.txt -c /tmp/auth-cookies.txt)",
       "Bash(curl -s -X POST http://localhost:3000/api/auth/sign-out -H 'Origin: http://localhost:5173' -b /tmp/auth-cookies.txt -c /tmp/auth-cookies.txt)",
       "Bash(bunx prisma *)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(curl -s http://localhost:3000/api/auth/ok)",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/sign-up/email -H 'Content-Type: application/json' -d '{\"email\":\"test@example.com\",\"password\":\"password123\",\"name\":\"Test User\"}')",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/sign-up/email -H 'Content-Type: application/json' -d '{\"email\":\"newuser@example.com\",\"password\":\"password123\",\"name\":\"New User\"}')",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/sign-in/email -H 'Content-Type: application/json' -d '{\"email\":\"newuser@example.com\",\"password\":\"password123\"}')",
+      "Bash(pkill -f \"bun run index.ts\")",
+      "Bash(pkill -f \"bun index.ts\")",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/sign-up/email -H 'Content-Type: application/json' -d '{\"email\":\"another@example.com\",\"password\":\"password123\",\"name\":\"Test\"}')"
     ]
   }
 }
