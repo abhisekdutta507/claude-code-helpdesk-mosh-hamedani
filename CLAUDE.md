@@ -84,6 +84,21 @@ Use `bun` for everything. Never use npm, yarn, or pnpm.
   ```
 - `/api/auth/*` (better-auth) and `/api/health` are intentionally outside `apiRouter` and have no auth requirement
 
+## Security Middleware
+
+Applied in `backend/index.ts` in this order: `helmet` → `cors` → `authLimiter` → `express.json` → routes → error handler.
+
+- **`helmet()`** — sets HTTP security headers (`X-Content-Type-Options`, `X-Frame-Options`, `Strict-Transport-Security`, etc.). Registered before CORS.
+- **`express.json({ limit: '100kb' })`** — caps request body size to prevent memory exhaustion. Adjust limit per-route if a route legitimately needs larger payloads.
+- **Global error handler** — always the last middleware registered (after all routes):
+  ```ts
+  app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+    console.error(err)
+    res.status(500).json({ error: 'Internal server error' })
+  })
+  ```
+  Express 5 automatically propagates async errors to this handler — no need for try/catch in route handlers.
+
 ## Rate Limiting
 
 Rate limiting is handled by `express-rate-limit` at the Express middleware layer (`backend/middleware/rateLimiter.ts`).
