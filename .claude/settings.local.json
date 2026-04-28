@@ -54,7 +54,13 @@
       "Bash(netstat -anp tcp)",
       "Bash(curl -s http://localhost:5173 -o /dev/null -w \"%{http_code}\")",
       "Bash(kill 60480)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(bunx playwright *)",
+      "Bash(bun -e ' *)",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/sign-in/email -H 'Content-Type: application/json' -H 'Origin: http://localhost:5173' -d '{\"email\":\"admin@test.local\",\"password\":\"TestAdmin@1234!\"}')",
+      "Bash(NODE_ENV=test bun -e \"console.log\\('DATABASE_URL:', process.env.DATABASE_URL\\)\")",
+      "Bash(kill 36013)",
+      "Bash(kill 60547)"
     ]
   }
 }

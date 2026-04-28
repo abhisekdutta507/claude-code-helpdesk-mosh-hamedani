@@ -3,3 +3,8 @@
 .env
 .DS_Store
 *.log
+
+# Playwright
+frontend/e2e/.auth/
+frontend/playwright-report/
+frontend/test-results/
