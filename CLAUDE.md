@@ -46,6 +46,15 @@ Use `bun` for everything. Never use npm, yarn, or pnpm.
 - **TypeScript** — strict mode enabled in both apps; no `any` types
 - **Imports** — use ESM (`import`/`export`) throughout; both apps are `"type": "module"`
 
+### Key environment variables
+
+| Variable | Where | Purpose |
+|---|---|---|
+| `DATABASE_URL` | `backend/.env` | PostgreSQL connection string (required — server throws on startup if missing) |
+| `BETTER_AUTH_URL` | `backend/.env` | Public backend URL; passed as `baseURL` to `betterAuth()` — sets cookie domain and enables `secure` flag over HTTPS |
+| `CORS_ORIGIN` | `backend/.env` | Allowed frontend origin (also used as `trustedOrigins` in better-auth) |
+| `VITE_API_URL` | `frontend/.env` | Backend base URL for the auth client (defaults to `http://localhost:3000`); set to production URL in CI/deploy |
+
 ## Authentication
 
 - Auth library: `better-auth` via `authClient` (from `@/lib/auth-client`)
@@ -58,9 +67,43 @@ Use `bun` for everything. Never use npm, yarn, or pnpm.
 
 ## Route Protection
 
+### Frontend (React Router guards)
 - `ProtectedRoute` (`frontend/src/components/ProtectedRoute.tsx`) — redirects unauthenticated users to `/login`
 - `AdminRoute` (`frontend/src/components/AdminRoute.tsx`) — redirects unauthenticated users to `/login`, non-admins to `/`
 - Wrap routes in `App.tsx` with the appropriate guard: `<Route element={<ProtectedRoute />}>` or `<Route element={<AdminRoute />}>`
+
+### Backend (Express middleware)
+- `requireAuth` (`backend/middleware/requireAuth.ts`) — validates session via better-auth; sets `req.user` and `req.session`; returns 401 if missing
+- `requireAdmin` (`backend/middleware/requireAdmin.ts`) — checks `req.user.role === 'ADMIN'`; returns 403 otherwise; always stack after `requireAuth`
+- All application routes are mounted on `apiRouter` in `backend/index.ts` behind `requireAuth` — protection is opt-out, not opt-in:
+  ```ts
+  // backend/index.ts
+  const apiRouter = Router()
+  app.use('/api', requireAuth, apiRouter)           // all app routes require auth
+  apiRouter.use('/users', requireAdmin, userRouter)  // admin-only routes add requireAdmin
+  ```
+- `/api/auth/*` (better-auth) and `/api/health` are intentionally outside `apiRouter` and have no auth requirement
+
+## Rate Limiting
+
+Rate limiting is handled by `express-rate-limit` at the Express middleware layer (`backend/middleware/rateLimiter.ts`).
+
+```ts
+import { authLimiter, apiLimiter, createRateLimiter } from './middleware/rateLimiter'
+```
+
+| Export | Limit | Use for |
+|---|---|---|
+| `authLimiter` | 10 req / 60s | Applied to all `/api/auth/*` routes |
+| `apiLimiter` | 100 req / 60s | General protected API routes |
+| `createRateLimiter(max, windowSec)` | custom | One-off strict endpoints |
+
+Apply to routes:
+```ts
+app.all('/api/auth/*splat', authLimiter, toNodeHandler(auth))  // already wired
+apiRouter.use('/tickets', apiLimiter, ticketRouter)
+apiRouter.post('/something-sensitive', createRateLimiter(5, 60), handler)
+```
 
 ## Constants
 

@@ -49,7 +49,12 @@
       "Bash(bunx tsc *)",
       "Bash(bunx shadcn@latest add alert)",
       "Bash(rm \"/Users/abhisekdutta/Projects/Learning Materials/Claude Code Trainings/claude-code-helpdesk-mosh-hamedani/.claude/skills/better-auth-best-practices\")",
-      "Bash(mkdir \"/Users/abhisekdutta/Projects/Learning Materials/Claude Code Trainings/claude-code-helpdesk-mosh-hamedani/.claude/skills/better-auth-best-practices\")"
+      "Bash(mkdir \"/Users/abhisekdutta/Projects/Learning Materials/Claude Code Trainings/claude-code-helpdesk-mosh-hamedani/.claude/skills/better-auth-best-practices\")",
+      "Bash(grep -rn '$queryRaw\\\\|$executeRaw\\\\|queryRaw\\\\|executeRaw' '/Users/abhisekdutta/Projects/Learning Materials/Claude Code Trainings/claude-code-helpdesk-mosh-hamedani/backend' '--include=*.ts')",
+      "Bash(netstat -anp tcp)",
+      "Bash(curl -s http://localhost:5173 -o /dev/null -w \"%{http_code}\")",
+      "Bash(kill 60480)",
+      "Read(//tmp/**)"
     ]
   }
 }

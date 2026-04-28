@@ -1,0 +1,1 @@
+- [Project Architecture — Helpdesk](project_architecture.md) — Early-stage project, no application routes yet, key security/TS/config facts
