@@ -543,4 +543,174 @@ describe('UsersPage', () => {
       expect(screen.getByRole('button', { name: 'Sign out' })).toBeInTheDocument();
     });
   });
+
+  describe('edit user button', () => {
+    beforeEach(() => {
+      mockedGet.mockResolvedValue({ data: MOCK_USERS });
+    });
+
+    it('renders an edit button for each user row', async () => {
+      renderPage();
+      await waitFor(() => screen.getByText('Alice Admin'));
+      expect(screen.getByTestId('edit-user-1')).toBeInTheDocument();
+      expect(screen.getByTestId('edit-user-2')).toBeInTheDocument();
+    });
+
+    it('dialog is not open by default (title "Edit user" not present)', async () => {
+      renderPage();
+      await waitFor(() => screen.getByText('Alice Admin'));
+      expect(screen.queryByText('Edit user')).not.toBeInTheDocument();
+    });
+
+    it('clicking an edit button opens the EditUserDialog', async () => {
+      renderPage();
+      await waitFor(() => screen.getByText('Alice Admin'));
+
+      fireEvent.click(screen.getByTestId('edit-user-1'));
+
+      expect(screen.getByText('Edit user')).toBeInTheDocument();
+    });
+
+    it('clicking edit for user 1 pre-populates the name field with "Alice Admin"', async () => {
+      renderPage();
+      await waitFor(() => screen.getByText('Alice Admin'));
+
+      fireEvent.click(screen.getByTestId('edit-user-1'));
+
+      await waitFor(() => {
+        expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('Alice Admin');
+      });
+    });
+
+    it('clicking edit for user 2 pre-populates the name field with "Bob Agent"', async () => {
+      renderPage();
+      await waitFor(() => screen.getByText('Bob Agent'));
+
+      fireEvent.click(screen.getByTestId('edit-user-2'));
+
+      await waitFor(() => {
+        expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('Bob Agent');
+      });
+    });
+
+    it('edit button has aria-label "Edit user"', async () => {
+      renderPage();
+      await waitFor(() => screen.getByText('Alice Admin'));
+
+      const editButtons = screen.getAllByRole('button', { name: 'Edit user' });
+      expect(editButtons.length).toBe(MOCK_USERS.length);
+    });
+  });
+
+  describe('successful user edit from UsersPage', () => {
+    it('closing dialog via Cancel sets editingUser to null (dialog closes, title gone)', async () => {
+      mockedGet.mockResolvedValue({ data: MOCK_USERS });
+      renderPage();
+      await waitFor(() => screen.getByText('Alice Admin'));
+
+      fireEvent.click(screen.getByTestId('edit-user-1'));
+      expect(screen.getByText('Edit user')).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+      await waitFor(() => {
+        expect(screen.queryByText('Edit user')).not.toBeInTheDocument();
+      });
+    });
+
+    it('after successful PUT, dialog closes and user list is refreshed', async () => {
+      const user = userEvent.setup();
+
+      mockedGet.mockResolvedValue({ data: MOCK_USERS });
+      vi.mocked(axios.put).mockResolvedValue({ data: {} });
+
+      const updatedUsers = [
+        { ...MOCK_USERS[0], name: 'Alice Updated' },
+        MOCK_USERS[1],
+      ];
+
+      renderPage();
+      await waitFor(() => screen.getByText('Alice Admin'));
+
+      // Open edit dialog for user 1
+      fireEvent.click(screen.getByTestId('edit-user-1'));
+      expect(screen.getByText('Edit user')).toBeInTheDocument();
+
+      // Update the name
+      await user.clear(screen.getByLabelText('Name'));
+      await user.type(screen.getByLabelText('Name'), 'Alice Updated');
+
+      // Prepare the refreshed list before submitting
+      mockedGet.mockResolvedValue({ data: updatedUsers });
+
+      fireEvent.submit(screen.getByTestId('edit-user-form'));
+
+      // Dialog should close
+      await waitFor(() => {
+        expect(screen.queryByText('Edit user')).not.toBeInTheDocument();
+      });
+
+      // Refreshed list should show updated name
+      await waitFor(() => {
+        expect(screen.getByText('Alice Updated')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('edit dialog error handling from UsersPage', () => {
+    beforeEach(() => {
+      mockedGet.mockResolvedValue({ data: MOCK_USERS });
+    });
+
+    it('shows server error when PUT fails with response.data.error', async () => {
+      vi.mocked(axios.put).mockRejectedValue(
+        Object.assign(new Error('Request failed'), {
+          isAxiosError: true,
+          response: { data: { error: 'Name is already taken.' } },
+        }),
+      );
+      vi.mocked(axios.isAxiosError).mockReturnValue(true);
+
+      renderPage();
+      await waitFor(() => screen.getByText('Alice Admin'));
+
+      fireEvent.click(screen.getByTestId('edit-user-1'));
+      fireEvent.submit(screen.getByTestId('edit-user-form'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Name is already taken.')).toBeInTheDocument();
+      });
+    });
+
+    it('shows generic error on non-axios failure', async () => {
+      vi.mocked(axios.put).mockRejectedValue(new Error('Network Error'));
+      vi.mocked(axios.isAxiosError).mockReturnValue(false);
+
+      renderPage();
+      await waitFor(() => screen.getByText('Alice Admin'));
+
+      fireEvent.click(screen.getByTestId('edit-user-1'));
+      fireEvent.submit(screen.getByTestId('edit-user-form'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Failed to update user.')).toBeInTheDocument();
+      });
+    });
+
+    it('dialog stays open on PUT failure', async () => {
+      vi.mocked(axios.put).mockRejectedValue(new Error('Network Error'));
+      vi.mocked(axios.isAxiosError).mockReturnValue(false);
+
+      renderPage();
+      await waitFor(() => screen.getByText('Alice Admin'));
+
+      fireEvent.click(screen.getByTestId('edit-user-1'));
+      fireEvent.submit(screen.getByTestId('edit-user-form'));
+
+      await waitFor(() => {
+        expect(screen.getByText('Failed to update user.')).toBeInTheDocument();
+      });
+      expect(screen.getByText('Edit user')).toBeInTheDocument();
+    });
+  });
 });

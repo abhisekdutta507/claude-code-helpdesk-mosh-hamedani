@@ -26,6 +26,23 @@ type: project
 - Card title format: `All users (N)` where N is `users.length`
 - Dialog controlled by local `dialogOpen` state; reset happens inside `CreateUserDialog.handleOpenChange`
 
+## EditUserDialog (`frontend/src/components/EditUserDialog.tsx`)
+
+- Submit button text: `'Saving…'` (U+2026 HORIZONTAL ELLIPSIS) while `mutation.isPending` (NOT `isSubmitting`)
+- Submit button is disabled while `mutation.isPending`; button uses `disabled={isPending}` where `isPending = mutation.isPending`
+- Form destructures only `{ errors }` from `formState` — no `isSubmitting`
+- Uses `react-hook-form` + `zodResolver(updateUserSchema)` from `@repo/shared/schemas/user`
+- `updateUserSchema`: name min 3 (trimmed), password min 8 (trimmed) optional OR literal ""
+- Email field is `disabled` and `readOnly`, displays `user?.email ?? ''` directly (not form-controlled)
+- `useEffect` resets form `{ name: user.name, password: '' }` whenever `user` prop changes
+- `handleOpenChange(false)` calls `reset()` before calling `onOpenChange(false)` — resets on Cancel
+- Error message path: `err.response?.data?.error ?? 'Failed to update user.'`
+- Root error shown in `<Alert variant="destructive">` — queryable with `getByRole('alert')`
+- `data-testid="edit-user-form"` on the `<form>` element
+- Edit button in UserRow: `data-testid={`edit-user-${user.id}`}`, `aria-label="Edit user"`
+- On success: `queryClient.invalidateQueries({ queryKey: ['users'] })`, then `onOpenChange(false)`
+- PUT endpoint: `${API_URL}/api/users/${user.id}` with `{ withCredentials: true }`
+
 ## Shared schema location
 
-`@repo/shared/schemas/user` — exports `createUserSchema`, `UserRole`, `CreateUserInput`
+`@repo/shared/schemas/user` — exports `createUserSchema`, `updateUserSchema`, `UserRole`, `CreateUserInput`, `UpdateUserInput`

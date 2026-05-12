@@ -3,7 +3,7 @@ import { requireAdmin } from "../middleware/requireAdmin";
 import { prisma } from "../db";
 import { hashPassword, generateRandomString } from "better-auth/crypto";
 import { z } from "zod";
-import { createUserSchema, UserRole } from "@repo/shared/schemas/user";
+import { createUserSchema, updateUserSchema, UserRole } from "@repo/shared/schemas/user";
 
 export function registerUsersRoutes(router: Router) {
   router.get("/users", requireAdmin, async (_req, res) => {
@@ -66,5 +66,43 @@ export function registerUsersRoutes(router: Router) {
     });
 
     res.status(201).json(user);
+  });
+
+  router.put("/users/:id", requireAdmin, async (req, res) => {
+    const result = updateUserSchema.safeParse(req.body);
+    if (!result.success) {
+      res.status(400).json({ error: "Invalid input", details: z.flattenError(result.error).fieldErrors });
+      return;
+    }
+    const { name, password } = result.data;
+    const { id } = req.params as { id: string };
+
+    const existing = await prisma.user.findUnique({ where: { id } });
+    if (!existing) {
+      res.status(404).json({ error: "User not found." });
+      return;
+    }
+
+    const now = new Date();
+
+    await prisma.user.update({
+      where: { id: id },
+      data: { name: name.trim(), updatedAt: now },
+    });
+
+    if (password) {
+      const hashedPassword = await hashPassword(password);
+      await prisma.account.updateMany({
+        where: { userId: id, providerId: "credential" },
+        data: { password: hashedPassword, updatedAt: now },
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: id },
+      select: { id: true, name: true, email: true, role: true, createdAt: true },
+    });
+
+    res.json(user);
   });
 }
