@@ -259,28 +259,22 @@ test.describe('delete user — server error', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 8. Admin cannot be deleted (real 403 from the backend)
+// 8. Admin cannot be deleted (Delete button is disabled in the UI)
 // ---------------------------------------------------------------------------
 test.describe('delete user — admin is protected', () => {
   test.beforeEach(async ({ page }) => {
     await gotoUsers(page);
   });
 
-  test('attempting to delete the admin user keeps the dialog open and the admin row in the table', async ({
+  test('the Delete button is disabled for the admin user and the admin row stays in the table', async ({
     page,
   }) => {
-    // Open the dialog for the seeded admin user — no route interception, let the
-    // real 403 come back from the backend.
-    await openDeleteDialog(page, testUsers.admin.email);
-    await page.getByTestId('confirm-delete-user').click();
+    const adminRow = page
+      .getByRole('row')
+      .filter({ has: page.getByRole('cell', { name: testUsers.admin.email }) });
 
-    // The backend returns 403; the mutation fails, so the dialog must stay open.
-    await expect(page.getByRole('alertdialog')).toBeVisible();
-
-    // Close the dialog before checking the table — the open modal hides
-    // background content from the aria tree while it is open.
-    await page.getByRole('alertdialog').getByRole('button', { name: 'Cancel' }).click();
-    await expect(page.getByRole('alertdialog')).not.toBeVisible();
+    // The Delete button for an admin must be disabled — the UI prevents deletion.
+    await expect(adminRow.getByRole('button', { name: 'Delete user' })).toBeDisabled();
 
     // The admin row must still be present in the table.
     await expect(page.getByRole('cell', { name: testUsers.admin.email })).toBeVisible();
