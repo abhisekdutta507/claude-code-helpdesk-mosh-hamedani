@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
 import NavBar from '@/components/NavBar';
 import CreateUserDialog from '@/components/CreateUserDialog';
-import { UserRole } from '@/lib/constants';
+import { UserRole } from '@repo/shared/schemas/user';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -31,9 +31,49 @@ async function fetchUsers(): Promise<User[]> {
   return res.data;
 }
 
+const roleBadgeClass = {
+  [UserRole.ADMIN]:
+    'inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary',
+  [UserRole.AGENT]:
+    'inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground',
+};
+
+function SkeletonRows() {
+  return (
+    <>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <TableRow key={i}>
+          <TableCell className="px-6"><Skeleton className="h-4 w-32" /></TableCell>
+          <TableCell className="px-6"><Skeleton className="h-4 w-48" /></TableCell>
+          <TableCell className="px-6"><Skeleton className="h-5 w-14 rounded-full" /></TableCell>
+          <TableCell className="px-6"><Skeleton className="h-4 w-24" /></TableCell>
+        </TableRow>
+      ))}
+    </>
+  );
+}
+
+function UserRow({ user }: { user: User }) {
+  return (
+    <TableRow>
+      <TableCell className="px-6 font-medium">{user.name}</TableCell>
+      <TableCell className="px-6 text-muted-foreground">{user.email}</TableCell>
+      <TableCell className="px-6">
+        <span className={roleBadgeClass[user.role]}>{user.role}</span>
+      </TableCell>
+      <TableCell className="px-6 text-muted-foreground">
+        {new Date(user.createdAt).toLocaleDateString()}
+      </TableCell>
+    </TableRow>
+  );
+}
+
 export default function UsersPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const { data: users = [], isPending, isError } = useQuery({ queryKey: ['users'], queryFn: fetchUsers });
+  const { data: users = [], isPending, isError } = useQuery({
+    queryKey: ['users'],
+    queryFn: fetchUsers,
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -43,8 +83,11 @@ export default function UsersPage() {
           <h1 className="text-2xl font-bold">Users</h1>
           <Button onClick={() => setDialogOpen(true)}>New agent</Button>
         </div>
+
         <CreateUserDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+
         {isError && <p className="text-destructive">Failed to load users.</p>}
+
         {!isError && (
           <Card>
             <CardHeader>
@@ -64,34 +107,9 @@ export default function UsersPage() {
                 </TableHeader>
                 <TableBody>
                   {isPending
-                    ? Array.from({ length: 5 }).map((_, i) => (
-                        <TableRow key={i}>
-                          <TableCell className="px-6"><Skeleton className="h-4 w-32" /></TableCell>
-                          <TableCell className="px-6"><Skeleton className="h-4 w-48" /></TableCell>
-                          <TableCell className="px-6"><Skeleton className="h-5 w-14 rounded-full" /></TableCell>
-                          <TableCell className="px-6"><Skeleton className="h-4 w-24" /></TableCell>
-                        </TableRow>
-                      ))
-                    : users.map((user) => (
-                        <TableRow key={user.id}>
-                          <TableCell className="px-6 font-medium">{user.name}</TableCell>
-                          <TableCell className="px-6 text-muted-foreground">{user.email}</TableCell>
-                          <TableCell className="px-6">
-                            <span
-                              className={
-                                user.role === UserRole.ADMIN
-                                  ? 'inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary'
-                                  : 'inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground'
-                              }
-                            >
-                              {user.role}
-                            </span>
-                          </TableCell>
-                          <TableCell className="px-6 text-muted-foreground">
-                            {new Date(user.createdAt).toLocaleDateString()}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                    ? <SkeletonRows />
+                    : users.map((user) => <UserRow key={user.id} user={user} />)
+                  }
                 </TableBody>
               </Table>
             </CardContent>

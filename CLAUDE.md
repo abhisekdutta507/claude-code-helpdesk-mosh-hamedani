@@ -53,10 +53,27 @@ export $(grep -v '^#' .env | xargs) && bun run prisma migrate deploy
 
 Rate limiting via `express-rate-limit` (`backend/middleware/rateLimiter.ts`): `authLimiter` (10 req/60s), `apiLimiter` (100 req/60s), `createRateLimiter(max, windowSec)`. All limiters are no-ops outside production.
 
+## Data Validation
+
+Use **Zod** for all backend request body validation (installed in `backend/`). Define schemas at the top of the route file and use `schema.safeParse(req.body)` — return a 400 with `z.flattenError(result.error).fieldErrors` on failure.
+
+Zod v4 API notes:
+- Use `z.email()` (top-level), not `z.string().email()` (deprecated)
+- Use `z.flattenError(err).fieldErrors` instead of `err.flatten().fieldErrors` (deprecated)
+
+## Shared Package
+
+The repo is a Bun workspace with three packages: `backend/`, `frontend/`, `shared/`.
+
+- Shared code (Zod schemas, constants, types used by both packages) lives in `shared/src/`
+- Import with `@repo/shared/<path>` — e.g. `import { createUserSchema, UserRole } from '@repo/shared/schemas/user'`
+- `shared/` has no build step; both packages import the `.ts` source directly via the `exports` map
+- Run `~/.bun/bin/bun install` from the repo root to link the workspace
+
 ## Constants
 
-- Shared frontend constants live in `frontend/src/lib/constants.ts`
 - **Do not use TypeScript `enum`** — `erasableSyntaxOnly` is enabled; use a `const` object with `as const` and a companion type instead
+- `UserRole` is defined in `shared/src/schemas/user.ts` — import from there, not from `frontend/src/lib/constants.ts`
 
 ## Data Fetching
 

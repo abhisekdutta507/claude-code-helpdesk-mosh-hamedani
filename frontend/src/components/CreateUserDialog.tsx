@@ -14,14 +14,9 @@ import {
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { createUserSchema } from '@repo/shared/schemas/user';
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
-
-const createUserSchema = z.object({
-  name: z.string().min(3, { message: 'Name must be at least 3 characters' }),
-  email: z.email({ error: 'Enter a valid email address' }),
-  password: z.string().min(8, { message: 'Password must be at least 8 characters' }),
-});
 
 type CreateUserFormData = z.infer<typeof createUserSchema>;
 
@@ -29,6 +24,32 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
+
+type FormFieldProps = {
+  id: keyof CreateUserFormData;
+  label: string;
+  type?: string;
+  placeholder?: string;
+  autoComplete?: string;
+  error?: string;
+} & ReturnType<ReturnType<typeof useForm<CreateUserFormData>>['register']>;
+
+function FormField({ id, label, type = 'text', placeholder, autoComplete, error, ...registration }: FormFieldProps) {
+  return (
+    <div className="flex flex-col gap-2">
+      <Label htmlFor={id}>{label}</Label>
+      <Input
+        id={id}
+        type={type}
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        aria-invalid={!!error}
+        {...registration}
+      />
+      {error && <p className="text-sm text-destructive">{error}</p>}
+    </div>
+  );
+}
 
 export default function CreateUserDialog({ open, onOpenChange }: Props) {
   const queryClient = useQueryClient();
@@ -51,12 +72,10 @@ export default function CreateUserDialog({ open, onOpenChange }: Props) {
       onOpenChange(false);
     },
     onError: (err) => {
-      if (axios.isAxiosError(err)) {
-        const message = err.response?.data?.error ?? 'Failed to create user.';
-        setError('root', { message });
-      } else {
-        setError('root', { message: 'Failed to create user.' });
-      }
+      const message = axios.isAxiosError(err)
+        ? (err.response?.data?.error ?? 'Failed to create user.')
+        : 'Failed to create user.';
+      setError('root', { message });
     },
   });
 
@@ -75,54 +94,41 @@ export default function CreateUserDialog({ open, onOpenChange }: Props) {
         <DialogHeader>
           <DialogTitle>Create new agent</DialogTitle>
         </DialogHeader>
+
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="name">Name</Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="Jane Smith"
-              autoComplete="off"
-              aria-invalid={!!errors.name}
-              {...register('name')}
-            />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name.message}</p>
-            )}
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="jane@example.com"
-              autoComplete="off"
-              aria-invalid={!!errors.email}
-              {...register('email')}
-            />
-            {errors.email && (
-              <p className="text-sm text-destructive">{errors.email.message}</p>
-            )}
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="new-password"
-              aria-invalid={!!errors.password}
-              {...register('password')}
-            />
-            {errors.password && (
-              <p className="text-sm text-destructive">{errors.password.message}</p>
-            )}
-          </div>
+          <FormField
+            id="name"
+            label="Name"
+            placeholder="Jane Smith"
+            autoComplete="off"
+            error={errors.name?.message}
+            {...register('name')}
+          />
+          <FormField
+            id="email"
+            label="Email"
+            type="email"
+            placeholder="jane@example.com"
+            autoComplete="off"
+            error={errors.email?.message}
+            {...register('email')}
+          />
+          <FormField
+            id="password"
+            label="Password"
+            type="password"
+            autoComplete="new-password"
+            error={errors.password?.message}
+            {...register('password')}
+          />
+
           {errors.root && (
             <Alert variant="destructive">
               <AlertCircle />
               <AlertDescription>{errors.root.message}</AlertDescription>
             </Alert>
           )}
+
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
               Cancel

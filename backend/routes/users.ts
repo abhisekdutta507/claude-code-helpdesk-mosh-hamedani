@@ -2,6 +2,8 @@ import type { Router } from "express";
 import { requireAdmin } from "../middleware/requireAdmin";
 import { prisma } from "../db";
 import { hashPassword, generateRandomString } from "better-auth/crypto";
+import { z } from "zod";
+import { createUserSchema, UserRole } from "@repo/shared/schemas/user";
 
 export function registerUsersRoutes(router: Router) {
   router.get("/users", requireAdmin, async (_req, res) => {
@@ -20,20 +22,12 @@ export function registerUsersRoutes(router: Router) {
   });
 
   router.post("/users", requireAdmin, async (req, res) => {
-    const { name, email, password } = req.body as {
-      name: string;
-      email: string;
-      password: string;
-    };
-
-    if (
-      typeof name !== "string" || name.trim().length < 3 ||
-      typeof email !== "string" || !email.includes("@") ||
-      typeof password !== "string" || password.length < 8
-    ) {
-      res.status(400).json({ error: "Invalid input" });
+    const result = createUserSchema.safeParse(req.body);
+    if (!result.success) {
+      res.status(400).json({ error: "Invalid input", details: z.flattenError(result.error).fieldErrors });
       return;
     }
+    const { name, email, password } = result.data;
 
     const normalizedEmail = email.toLowerCase().trim();
 
@@ -54,7 +48,7 @@ export function registerUsersRoutes(router: Router) {
         name: name.trim(),
         email: normalizedEmail,
         emailVerified: false,
-        role: "AGENT",
+        role: UserRole.AGENT,
         createdAt: now,
         updatedAt: now,
         accounts: {
@@ -68,13 +62,7 @@ export function registerUsersRoutes(router: Router) {
           },
         },
       },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        createdAt: true,
-      },
+      select: { id: true, name: true, email: true, role: true, createdAt: true },
     });
 
     res.status(201).json(user);

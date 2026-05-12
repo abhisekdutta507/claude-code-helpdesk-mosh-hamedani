@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { authClient } from '@/lib/auth-client';
-import { UserRole } from '@/lib/constants';
+import { UserRole } from '@repo/shared/schemas/user';
 import { Button } from '@/components/ui/button';
 
 export default function NavBar() {

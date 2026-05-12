@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { authClient } from '@/lib/auth-client';
-import { UserRole } from '@/lib/constants';
+import { UserRole } from '@repo/shared/schemas/user';
 
 export default function AdminRoute() {
   const { data: session, isPending } = authClient.useSession();

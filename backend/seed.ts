@@ -1,7 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./db";
-import { UserRole } from "./generated/prisma/client";
+import { UserRole } from "@repo/shared/schemas/user";
 
 const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "";
 const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? "";
