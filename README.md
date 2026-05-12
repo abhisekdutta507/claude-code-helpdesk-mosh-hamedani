@@ -43,25 +43,36 @@ Two different Claude Code features live under `.claude/`, each with its own conv
 
 ### Prerequisites
 
-- [Bun](https://bun.sh) installed
+- [Bun](https://bun.sh) installed (`curl -fsSL https://bun.sh/install | bash`)
 - PostgreSQL database (local or [Neon](https://neon.tech))
-- `.env` files configured in `backend/` (see `.env.example` if available)
+- `backend/.env` configured (see env vars below)
+
+### Environment variables (`backend/.env`)
+
+```env
+DATABASE_URL="postgresql://..."
+BETTER_AUTH_SECRET="..."
+BETTER_AUTH_URL="http://localhost:3000"
+CORS_ORIGIN="http://localhost:5173"
+
+SEED_ADMIN_EMAIL="admin@example.com"
+SEED_ADMIN_PASSWORD="Admin@1234!"
+SEED_AGENT1_EMAIL="agent1@example.com"
+SEED_AGENT1_PASSWORD="Agent@1234!"
+```
 
 ### Backend
 
 ```bash
 cd backend
 bun install
+bun run prisma generate
+export $(grep -v '^#' .env | xargs) && bun run prisma migrate deploy
+bun run seed.ts        # creates admin + agent users from .env (idempotent)
 bun run dev
 ```
 
 Runs on **http://localhost:3000**
-
-To seed the initial admin user (run once after migration):
-
-```bash
-bun run seed
-```
 
 ### Frontend
 

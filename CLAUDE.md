@@ -38,6 +38,8 @@ Use `bun` for everything. Never use npm, yarn, or pnpm.
 - `bun run <script>` — run a script
 - `bunx <pkg>` — execute a package binary
 
+> **Note:** In non-interactive shells (e.g. CI, background tasks), `bun` may not be on `PATH`. Use the full path `~/.bun/bin/bun` in scripts or tool calls if needed.
+
 ## Key Conventions
 
 - **API routes** are prefixed with `/api`
@@ -45,6 +47,35 @@ Use `bun` for everything. Never use npm, yarn, or pnpm.
 - **Environment variables** — use `.env` files; Bun loads them automatically, no dotenv needed
 - **TypeScript** — strict mode enabled in both apps; no `any` types
 - **Imports** — use ESM (`import`/`export`) throughout; both apps are `"type": "module"`
+
+## Local Dev Setup
+
+### First-time setup
+
+```sh
+# 1. Install dependencies
+cd backend && bun install
+cd ../frontend && bun install
+
+# 2. Generate Prisma client (required before first run)
+cd ../backend && bun run prisma generate
+
+# 3. Run migrations (load .env first — prisma subprocess doesn't inherit Bun's env)
+export $(grep -v '^#' .env | xargs) && bun run prisma migrate deploy
+
+# 4. Seed users from .env
+bun run seed.ts
+
+# 5. Start servers
+bun --hot index.ts          # backend on :3000
+cd ../frontend && bun run dev  # frontend on :5173
+```
+
+### Seed script (`backend/seed.ts`)
+
+Creates users from `.env` — idempotent (skips existing users). Reads:
+- `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` → creates ADMIN user (required)
+- `SEED_AGENT1_EMAIL` / `SEED_AGENT1_PASSWORD` → creates AGENT user (optional)
 
 ### Key environment variables
 
@@ -54,6 +85,10 @@ Use `bun` for everything. Never use npm, yarn, or pnpm.
 | `BETTER_AUTH_URL` | `backend/.env` | Public backend URL; passed as `baseURL` to `betterAuth()` — sets cookie domain and enables `secure` flag over HTTPS |
 | `CORS_ORIGIN` | `backend/.env` | Allowed frontend origin (also used as `trustedOrigins` in better-auth) |
 | `VITE_API_URL` | `frontend/.env` | Backend base URL for the auth client (defaults to `http://localhost:3000`); set to production URL in CI/deploy |
+| `SEED_ADMIN_EMAIL` | `backend/.env` | Admin user email for `seed.ts` |
+| `SEED_ADMIN_PASSWORD` | `backend/.env` | Admin user password for `seed.ts` |
+| `SEED_AGENT1_EMAIL` | `backend/.env` | Agent 1 email for `seed.ts` (optional) |
+| `SEED_AGENT1_PASSWORD` | `backend/.env` | Agent 1 password for `seed.ts` (optional) |
 
 ## Authentication
 
