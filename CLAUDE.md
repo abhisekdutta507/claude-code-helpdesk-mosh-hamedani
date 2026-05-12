@@ -4,8 +4,6 @@
 
 AI-powered helpdesk ticket management system. Support emails are received via SendGrid Inbound Parse, automatically classified and summarized by Claude AI, and agents can review and send AI-suggested replies from a web dashboard.
 
-**Ticket statuses:** Open → Resolved → Closed
-**Ticket categories:** General question, Technical question, Refund request
 **User roles:** Admin (manages agents) | Agent (handles tickets)
 
 ## Tech Stack
@@ -41,35 +39,24 @@ export $(grep -v '^#' .env | xargs) && bun run prisma migrate deploy
 ## Route Protection
 
 ### Frontend (React Router guards)
-- `ProtectedRoute` (`frontend/src/components/ProtectedRoute.tsx`) — redirects unauthenticated users to `/login`
-- `AdminRoute` (`frontend/src/components/AdminRoute.tsx`) — redirects unauthenticated users to `/login`, non-admins to `/`
-- Wrap routes in `App.tsx` with the appropriate guard: `<Route element={<ProtectedRoute />}>` or `<Route element={<AdminRoute />}>`
+- `ProtectedRoute` — redirects unauthenticated users to `/login`
+- `AdminRoute` — redirects unauthenticated users to `/login`, non-admins to `/`
 
 ### Backend (Express middleware)
 - `requireAuth` — validates session, sets `req.user`/`req.session`, returns 401 if missing
-- `requireAdmin` — checks `req.user.role === 'ADMIN'`, returns 403 otherwise; always stack after `requireAuth`
+- `requireAdmin` — checks `req.user.role === 'ADMIN'`, returns 403; always stack after `requireAuth`
 - All `/api` routes are behind `requireAuth` (opt-out, not opt-in); `/api/auth/*` and `/api/health` are intentionally unprotected
 
-## Security Middleware
+## Security & Rate Limiting
 
-Applied in `backend/index.ts` in this order: `helmet` → `cors` → `authLimiter` → `express.json` → routes → error handler.
+`backend/index.ts` middleware order: `helmet` → `cors` → `authLimiter` → `express.json` → routes → error handler. Express 5 propagates async errors automatically — no try/catch needed in route handlers.
 
-Express 5 automatically propagates async errors to the global error handler — no try/catch needed in route handlers.
-
-## Rate Limiting
-
-Handled by `express-rate-limit` in `backend/middleware/rateLimiter.ts`. Exports: `authLimiter` (10 req/60s), `apiLimiter` (100 req/60s), `createRateLimiter(max, windowSec)`.
-
-**Production-only:** All limiters are no-ops when `NODE_ENV !== 'production'`.
+Rate limiting via `express-rate-limit` (`backend/middleware/rateLimiter.ts`): `authLimiter` (10 req/60s), `apiLimiter` (100 req/60s), `createRateLimiter(max, windowSec)`. All limiters are no-ops outside production.
 
 ## Constants
 
 - Shared frontend constants live in `frontend/src/lib/constants.ts`
-- **Do not use TypeScript `enum`** — `erasableSyntaxOnly` is enabled; use a `const` object with `as const` and a companion type instead:
-  ```ts
-  export const UserRole = { ADMIN: 'ADMIN', AGENT: 'AGENT' } as const
-  export type UserRole = (typeof UserRole)[keyof typeof UserRole]
-  ```
+- **Do not use TypeScript `enum`** — `erasableSyntaxOnly` is enabled; use a `const` object with `as const` and a companion type instead
 
 ## Data Fetching
 
@@ -80,13 +67,26 @@ Handled by `express-rate-limit` in `backend/middleware/rateLimiter.ts`. Exports:
 
 ## shadcn/ui
 
-- Add components with `bunx shadcn@latest add <component>` (outputs to `frontend/src/components/ui/`)
-- Alert's CSS grid automatically positions a sibling SVG icon alongside `AlertDescription` — no extra wrapper needed
+Add components with `bunx shadcn@latest add <component>` (outputs to `frontend/src/components/ui/`).
 
-## Tailwind CSS
+## Unit Testing (Vitest + React Testing Library)
 
-- Tailwind v4 via `@import "tailwindcss"` in `frontend/src/index.css`
-- Chrome autofill override is in `@layer base` of `index.css` — uses `var(--card)` (not `var(--background)`) so autofill matches Card background
+Run unit tests from the `frontend/` directory:
+
+```sh
+bun run test          # run once
+bun run test:watch    # watch mode
+```
+
+Test files live alongside source files as `*.test.tsx` / `*.test.ts` under `src/`.
+
+### Conventions
+
+- Use `renderWithProviders(ui)` from `@/test/render-utils` — wraps components in `QueryClientProvider` + `MemoryRouter`
+- Define a file-local `const renderPage = () => renderWithProviders(<MyPage />)` so JSX is written once per file
+- Mock `axios` with `vi.mock('axios')` and use `vi.mocked(axios.get)` for typed mock control
+- Mock `@/lib/auth-client` to avoid real auth calls; provide the session shape your component needs
+- Use `vi.clearAllMocks()` in `beforeEach` to reset state between tests
 
 ## E2E Testing (Playwright)
 
