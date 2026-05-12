@@ -47,6 +47,7 @@ Use `bun` for everything. Never use npm, yarn, or pnpm.
 - **Environment variables** — use `.env` files; Bun loads them automatically, no dotenv needed
 - **TypeScript** — strict mode enabled in both apps; no `any` types
 - **Imports** — use ESM (`import`/`export`) throughout; both apps are `"type": "module"`
+- **Semicolons** — always use semicolons at the end of statements in all TypeScript/TSX files (frontend and backend)
 
 ## Local Dev Setup
 

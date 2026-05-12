@@ -1,15 +1,15 @@
-import { useNavigate } from 'react-router-dom'
-import { authClient } from '@/lib/auth-client'
-import { Button } from '@/components/ui/button'
+import { useNavigate } from 'react-router-dom';
+import { authClient } from '@/lib/auth-client';
+import { Button } from '@/components/ui/button';
 
 export default function UsersPage() {
-  const navigate = useNavigate()
-  const { data: session } = authClient.useSession()
-  const userName = session?.user.name ?? 'User'
+  const navigate = useNavigate();
+  const { data: session } = authClient.useSession();
+  const userName = session?.user.name ?? 'User';
 
   async function handleSignOut() {
-    await authClient.signOut()
-    navigate('/login', { replace: true })
+    await authClient.signOut();
+    navigate('/login', { replace: true });
   }
 
   return (
@@ -29,5 +29,5 @@ export default function UsersPage() {
         <h1 className="text-2xl font-bold">Users</h1>
       </main>
     </div>
-  )
+  );
 }

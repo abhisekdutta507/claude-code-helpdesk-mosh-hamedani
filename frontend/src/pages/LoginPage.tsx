@@ -1,31 +1,31 @@
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { Navigate, useNavigate } from 'react-router-dom'
-import { authClient } from '@/lib/auth-client'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { authClient } from '@/lib/auth-client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { AlertCircle } from 'lucide-react'
+} from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.email({ error: 'Enter a valid email address' }),
   password: z.string().min(1, { error: 'Password is required' }),
-})
+});
 
-type LoginFormData = z.infer<typeof loginSchema>
+type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const navigate = useNavigate()
-  const { data: session, isPending } = authClient.useSession()
+  const navigate = useNavigate();
+  const { data: session, isPending } = authClient.useSession();
   const {
     register,
     handleSubmit,
@@ -33,27 +33,27 @@ export default function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-  })
+  });
 
   if (isPending) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <p className="text-muted-foreground text-sm">Loading…</p>
       </div>
-    )
+    );
   }
 
-  if (session) return <Navigate to="/" replace />
+  if (session) return <Navigate to="/" replace />;
 
   async function onSubmit(data: LoginFormData) {
-    const { error: authError } = await authClient.signIn.email(data)
+    const { error: authError } = await authClient.signIn.email(data);
 
     if (authError) {
-      setError('root', { message: authError.message ?? 'Invalid email or password.' })
-      return
+      setError('root', { message: authError.message ?? 'Invalid email or password.' });
+      return;
     }
 
-    navigate('/', { replace: true })
+    navigate('/', { replace: true });
   }
 
   return (
@@ -105,5 +105,5 @@ export default function LoginPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

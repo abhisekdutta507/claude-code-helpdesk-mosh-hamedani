@@ -1,6 +1,6 @@
-import { createAuthClient } from 'better-auth/react'
-import { inferAdditionalFields } from 'better-auth/client/plugins'
-import { UserRole } from '@/lib/constants'
+import { createAuthClient } from 'better-auth/react';
+import { inferAdditionalFields } from 'better-auth/client/plugins';
+import { UserRole } from '@/lib/constants';
 
 export const authClient = createAuthClient({
   baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:3000',
@@ -12,4 +12,4 @@ export const authClient = createAuthClient({
       },
     }),
   ],
-})
+});
