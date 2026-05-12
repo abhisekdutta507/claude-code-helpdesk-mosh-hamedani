@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import NavBar from '@/components/NavBar';
 import { UserRole } from '@/lib/constants';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -35,12 +36,13 @@ export default function UsersPage() {
       <NavBar />
       <main className="mx-auto max-w-7xl px-4 py-8">
         <h1 className="mb-6 text-2xl font-bold">Users</h1>
-        {isPending && <p className="text-muted-foreground">Loading…</p>}
         {isError && <p className="text-destructive">Failed to load users.</p>}
-        {!isPending && !isError && (
+        {!isError && (
           <Card>
             <CardHeader>
-              <CardTitle>All users ({users.length})</CardTitle>
+              <CardTitle>
+                {isPending ? <Skeleton className="h-5 w-24" /> : `All users (${users.length})`}
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
@@ -53,26 +55,35 @@ export default function UsersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="px-6 font-medium">{user.name}</TableCell>
-                      <TableCell className="px-6 text-muted-foreground">{user.email}</TableCell>
-                      <TableCell className="px-6">
-                        <span
-                          className={
-                            user.role === UserRole.ADMIN
-                              ? 'inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary'
-                              : 'inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground'
-                          }
-                        >
-                          {user.role}
-                        </span>
-                      </TableCell>
-                      <TableCell className="px-6 text-muted-foreground">
-                        {new Date(user.createdAt).toLocaleDateString()}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {isPending
+                    ? Array.from({ length: 5 }).map((_, i) => (
+                        <TableRow key={i}>
+                          <TableCell className="px-6"><Skeleton className="h-4 w-32" /></TableCell>
+                          <TableCell className="px-6"><Skeleton className="h-4 w-48" /></TableCell>
+                          <TableCell className="px-6"><Skeleton className="h-5 w-14 rounded-full" /></TableCell>
+                          <TableCell className="px-6"><Skeleton className="h-4 w-24" /></TableCell>
+                        </TableRow>
+                      ))
+                    : users.map((user) => (
+                        <TableRow key={user.id}>
+                          <TableCell className="px-6 font-medium">{user.name}</TableCell>
+                          <TableCell className="px-6 text-muted-foreground">{user.email}</TableCell>
+                          <TableCell className="px-6">
+                            <span
+                              className={
+                                user.role === UserRole.ADMIN
+                                  ? 'inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary'
+                                  : 'inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground'
+                              }
+                            >
+                              {user.role}
+                            </span>
+                          </TableCell>
+                          <TableCell className="px-6 text-muted-foreground">
+                            {new Date(user.createdAt).toLocaleDateString()}
+                          </TableCell>
+                        </TableRow>
+                      ))}
                 </TableBody>
               </Table>
             </CardContent>
