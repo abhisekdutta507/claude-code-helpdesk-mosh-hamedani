@@ -193,32 +193,9 @@ apiRouter.post('/something-sensitive', createRateLimiter(5, 60), handler)
 
 ## E2E Testing (Playwright)
 
-Playwright tests live in `frontend/e2e/`. Run from `frontend/`:
+Use the `e2e-test-writer` agent for all Playwright test work. It has full context on the test infrastructure, auth setup, seeded users, and project conventions.
 
-```sh
-bun run test:e2e          # headless run
-bun run test:e2e:ui       # interactive Playwright UI
-bun run test:e2e:report   # open last HTML report
-```
-
-### How it works
-
-1. **`global.setup.ts`** runs once before any test project: applies Prisma migrations to the test DB, truncates all data, then runs `bun run seed` — so every run starts from a clean known state.
-2. **`auth.setup.ts`** (the `setup` project) signs in as `admin@test.local` via the UI and saves session storage to `e2e/.auth/admin.json`.
-3. **`chromium` project** depends on `setup` and injects the saved auth state, so tests start already logged in.
-
-### Test database
-
-The backend is started with `NODE_ENV=test` by the `webServer` config, which loads `backend/.env.test` (points to a separate test database — never the dev DB). The test DB URL must be set in `backend/.env.test` as `DATABASE_URL`.
-
-`e2e/.auth/` and `playwright-report/` are gitignored.
-
-### Auth credentials (seeded)
-
-| Email | Password | Role |
-|---|---|---|
-| `admin@test.local` | `TestAdmin@1234!` | ADMIN |
-| `agent1@test.local` | `TestAgent@1234!` | AGENT |
+Trigger it after implementing a new UI feature or API-backed workflow, or when explicitly asked to write tests.
 
 ## Library Documentation
 
