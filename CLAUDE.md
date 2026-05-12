@@ -77,6 +77,13 @@ Creates users from `.env` — idempotent (skips existing users). Reads:
 - `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` → creates ADMIN user (required)
 - `SEED_AGENT1_EMAIL` / `SEED_AGENT1_PASSWORD` → creates AGENT user (optional)
 
+### Dev credentials (seeded from `backend/.env`)
+
+| Email | Password | Role |
+|---|---|---|
+| `abhisek.dutta.507@gmail.com` | `Admin@1234!` | ADMIN |
+| `agent1@example.com` | `Agent@1234!` | AGENT |
+
 ### Key environment variables
 
 | Variable | Where | Purpose |
@@ -211,6 +218,7 @@ The backend is started with `NODE_ENV=test` by the `webServer` config, which loa
 | Email | Password | Role |
 |---|---|---|
 | `admin@test.local` | `TestAdmin@1234!` | ADMIN |
+| `agent1@test.local` | `TestAgent@1234!` | AGENT |
 
 ## Library Documentation
 
