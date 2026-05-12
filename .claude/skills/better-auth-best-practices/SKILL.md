@@ -9,17 +9,6 @@ description: Configure Better Auth server and client, set up database adapters, 
 
 ---
 
-## Setup Workflow
-
-1. Install: `npm install better-auth`
-2. Set env vars: `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL`
-3. Create `auth.ts` with database + config
-4. Create route handler for your framework
-5. Run `npx @better-auth/cli@latest migrate`
-6. Verify: call `GET /api/auth/ok` — should return `{ status: "ok" }`
-
----
-
 ## Quick Reference
 
 ### Environment Variables
@@ -27,33 +16,6 @@ description: Configure Better Auth server and client, set up database adapters, 
 - `BETTER_AUTH_URL` - Base URL (e.g., `https://example.com`)
 
 Only define `baseURL`/`secret` in config if env vars are NOT set.
-
-### File Location
-CLI looks for `auth.ts` in: `./`, `./lib`, `./utils`, or under `./src`. Use `--config` for custom path.
-
-### CLI Commands
-- `npx @better-auth/cli@latest migrate` - Apply schema (built-in adapter)
-- `npx @better-auth/cli@latest generate` - Generate schema for Prisma/Drizzle
-- `npx @better-auth/cli mcp --cursor` - Add MCP to AI tools
-
-**Re-run after adding/changing plugins.**
-
----
-
-## Core Config Options
-
-| Option | Notes |
-|--------|-------|
-| `appName` | Optional display name |
-| `baseURL` | Only if `BETTER_AUTH_URL` not set |
-| `basePath` | Default `/api/auth`. Set `/` for root. |
-| `secret` | Only if `BETTER_AUTH_SECRET` not set |
-| `database` | Required for most features. See adapters docs. |
-| `secondaryStorage` | Redis/KV for sessions & rate limits |
-| `emailAndPassword` | `{ enabled: true }` to activate |
-| `socialProviders` | `{ google: { clientId, clientSecret }, ... }` |
-| `plugins` | Array of plugins |
-| `trustedOrigins` | CSRF whitelist |
 
 ---
 
@@ -83,23 +45,6 @@ CLI looks for `auth.ts` in: `./`, `./lib`, `./utils`, or under `./src`. Use `--c
 
 ---
 
-## User & Account Config
-
-**User:** `user.modelName`, `user.fields` (column mapping), `user.additionalFields`, `user.changeEmail.enabled` (disabled by default), `user.deleteUser.enabled` (disabled by default).
-
-**Account:** `account.modelName`, `account.accountLinking.enabled`, `account.storeAccountCookie` (for stateless OAuth).
-
-**Required for registration:** `email` and `name` fields.
-
----
-
-## Email Flows
-
-- `emailVerification.sendVerificationEmail` - Must be defined for verification to work
-- `emailVerification.sendOnSignUp` / `sendOnSignIn` - Auto-send triggers
-- `emailAndPassword.sendResetPassword` - Password reset email handler
-
----
 
 ## Security
 
@@ -147,14 +92,6 @@ Key methods: `signUp.email()`, `signIn.email()`, `signIn.social()`, `signOut()`,
 
 ---
 
-## Type Safety
-
-Infer types: `typeof auth.$Infer.Session`, `typeof auth.$Infer.Session.user`.
-
-For separate client/server projects: `createAuthClient<typeof auth>()`.
-
----
-
 ## Common Gotchas
 
 1. **Model vs table name** - Config uses ORM model name, not DB table name
@@ -168,8 +105,6 @@ For separate client/server projects: `createAuthClient<typeof auth>()`.
 
 ## Resources
 
-- [Docs](https://better-auth.com/docs)
 - [Options Reference](https://better-auth.com/docs/reference/options)
 - [LLMs.txt](https://better-auth.com/llms.txt)
-- [GitHub](https://github.com/better-auth/better-auth)
 - [Init Options Source](https://github.com/better-auth/better-auth/blob/main/packages/core/src/types/init-options.ts)
