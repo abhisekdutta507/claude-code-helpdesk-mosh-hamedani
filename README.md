@@ -156,6 +156,40 @@ Playwright is the most modern solution for e2e testing.
 setup playwright with a separate database for testing
 ```
 
+**Security hardening**
+
+```text
+do a security review of this project
+```
+
+```text
+fix the medium severity issues
+```
+
+```text
+disable rate limiting outside production
+```
+
+**Admin — user management**
+
+```text
+build the admin users page. admins can create and deactivate agent accounts.
+```
+
+**Claude Code configuration**
+
+```text
+add a code-reviewer subagent
+```
+
+```text
+move the testing instructions from CLAUDE.md to e2e-test-writer
+```
+
+```text
+update CLAUDE.md. add instructions for using e2e-test-writer for writing tests
+```
+
 **Housekeeping**
 
 ```text
