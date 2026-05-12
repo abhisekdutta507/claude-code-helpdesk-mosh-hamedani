@@ -24,9 +24,14 @@ export default async function globalSetup() {
   const testEnv = parseEnvFile(path.join(backendDir, '.env.test'))
   const env = { ...process.env, ...testEnv }
 
+  const bunBin = `${process.env.HOME}/.bun/bin/bun`
+  const bunDir = `${process.env.HOME}/.bun/bin`
+  // Ensure bun is on PATH for child processes spawned by scripts (e.g. seed)
+  env.PATH = env.PATH ? `${bunDir}:${env.PATH}` : bunDir
+
   // Apply any pending migrations (also creates the DB if it doesn't exist yet)
   console.log('\nApplying migrations to test database…')
-  execSync('bunx prisma migrate deploy', {
+  execSync(`${bunBin}x prisma migrate deploy`, {
     cwd: backendDir,
     env,
     stdio: 'inherit',
@@ -34,7 +39,7 @@ export default async function globalSetup() {
 
   // Clear all data so each test run starts from a known state
   console.log('\nTruncating test data…')
-  execSync('bunx prisma db execute --stdin', {
+  execSync(`${bunBin}x prisma db execute --stdin`, {
     cwd: backendDir,
     env,
     input: 'TRUNCATE TABLE "user", "session", "account", "verification" RESTART IDENTITY CASCADE;',
@@ -42,7 +47,7 @@ export default async function globalSetup() {
   })
 
   console.log('\nSeeding test database…')
-  execSync('bun run seed', {
+  execSync(`${bunBin} run seed`, {
     cwd: backendDir,
     env,
     stdio: 'inherit',

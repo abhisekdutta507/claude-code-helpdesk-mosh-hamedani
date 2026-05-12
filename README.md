@@ -156,6 +156,12 @@ Playwright is the most modern solution for e2e testing.
 setup playwright with a separate database for testing
 ```
 
+```text
+Write e2e test cases for the authentication system. Cover all scenarios & edge cases.
+Then update the memory & .md files.
+Add the prompt in the README.md
+```
+
 **Security hardening**
 
 ```text

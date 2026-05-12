@@ -197,6 +197,30 @@ Use the `e2e-test-writer` agent for all Playwright test work. It has full contex
 
 Trigger it after implementing a new UI feature or API-backed workflow, or when explicitly asked to write tests.
 
+### Test server ports
+
+Tests run on separate ports to avoid conflicting with dev servers:
+
+| Server | Dev port | Test port |
+|---|---|---|
+| Backend | 3000 | 3001 |
+| Frontend | 5173 | 5174 |
+
+`frontend/.env.test` sets `VITE_API_URL=http://localhost:3001`. Vite is started with `--mode test --port 5174`. The backend is started with `PORT=3001` and env vars from `backend/.env.test`.
+
+### Sign-out test isolation
+
+`authClient.signOut()` deletes the session row from the DB. Any test that calls sign-out **must** use `test.use({ storageState: { cookies: [], origins: [] } })` and log in fresh — sharing the pre-authed `admin.json` session would invalidate concurrent tests.
+
+```ts
+// Pattern for tests that need to start unauthenticated
+const unauthenticatedState = { storageState: { cookies: [], origins: [] } }
+test.describe('...', () => {
+  test.use(unauthenticatedState)
+  // ...
+})
+```
+
 ## Library Documentation
 
 Always use Context7 to fetch up-to-date docs before working with any library. Never rely solely on training data for API usage or configuration.
