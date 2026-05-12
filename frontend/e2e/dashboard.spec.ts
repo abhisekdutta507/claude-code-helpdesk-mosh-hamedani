@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { login } from './helpers';
+import { testUsers } from './test-credentials';
 
 test('home page shows welcome message', async ({ page }) => {
   await page.goto('/');
@@ -14,7 +15,7 @@ test.describe('sign out', () => {
 
   test('sign out redirects to login', async ({ page }) => {
     await page.goto('/login');
-    await login(page, 'admin@test.local', 'TestAdmin@1234!');
+    await login(page, testUsers.admin.email, testUsers.admin.password);
     await page.waitForURL('/');
 
     await page.getByRole('button', { name: 'Sign out' }).click();

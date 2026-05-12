@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { login } from './helpers';
+import { testUsers } from './test-credentials';
 
 // These describe blocks override the default admin storage state (set at the project level)
 // so that the tests start unauthenticated — required for login-flow tests.
@@ -73,14 +74,14 @@ test.describe('login — happy paths', () => {
 
   test('admin signs in with correct credentials and sees welcome message', async ({ page }) => {
     await page.goto('/login');
-    await login(page, 'admin@test.local', 'TestAdmin@1234!');
+    await login(page, testUsers.admin.email, testUsers.admin.password);
     await page.waitForURL('/');
     await expect(page.getByRole('heading', { name: /welcome, admin/i })).toBeVisible();
   });
 
   test('agent signs in with correct credentials and is redirected to home', async ({ page }) => {
     await page.goto('/login');
-    await login(page, 'agent1@test.local', 'TestAgent@1234!');
+    await login(page, testUsers.agent1.email, testUsers.agent1.password);
     await page.waitForURL('/');
     await expect(page.getByRole('heading', { name: /welcome,/i })).toBeVisible();
   });
@@ -110,7 +111,7 @@ test.describe('login — failure cases', () => {
   });
 
   test('wrong password for valid email shows destructive alert', async ({ page }) => {
-    await login(page, 'admin@test.local', 'WrongPassword!');
+    await login(page, testUsers.admin.email, 'WrongPassword!');
     await expect(page.getByRole('alert')).toBeVisible();
   });
 
@@ -128,8 +129,8 @@ test.describe('login — failure cases', () => {
       await route.continue();
     });
 
-    await page.locator('#email').fill('admin@test.local');
-    await page.locator('#password').fill('TestAdmin@1234!');
+    await page.locator('#email').fill(testUsers.admin.email);
+    await page.locator('#password').fill(testUsers.admin.password);
 
     const signInButton = page.getByRole('button', { name: 'Sign in' });
     await signInButton.click();
@@ -153,7 +154,7 @@ test.describe('sign out', () => {
   test.beforeEach(async ({ page }) => {
     // Establish a fresh session for each sign-out test
     await page.goto('/login');
-    await login(page, 'admin@test.local', 'TestAdmin@1234!');
+    await login(page, testUsers.admin.email, testUsers.admin.password);
     await page.waitForURL('/');
   });
 
