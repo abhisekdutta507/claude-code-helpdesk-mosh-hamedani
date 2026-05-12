@@ -77,6 +77,11 @@ export function registerUsersRoutes(router: Router) {
       return;
     }
 
+    if (existing.role === UserRole.ADMIN) {
+      res.status(403).json({ error: "Admin users cannot be deleted." });
+      return;
+    }
+
     await prisma.user.delete({ where: { id } });
 
     res.status(204).send();

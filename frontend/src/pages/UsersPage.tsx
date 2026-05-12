@@ -29,6 +29,20 @@ type User = {
   createdAt: string;
 };
 
+const DialogMode = {
+  NONE: 'none',
+  CREATE: 'create',
+  EDIT: 'edit',
+  DELETE: 'delete',
+} as const;
+type DialogMode = (typeof DialogMode)[keyof typeof DialogMode];
+
+type DialogState =
+  | { mode: typeof DialogMode.NONE }
+  | { mode: typeof DialogMode.CREATE }
+  | { mode: typeof DialogMode.EDIT; user: User }
+  | { mode: typeof DialogMode.DELETE; user: User };
+
 async function fetchUsers(): Promise<User[]> {
   const res = await axios.get<User[]>(`${API_URL}/api/users`, { withCredentials: true });
   return res.data;
@@ -93,6 +107,7 @@ function UserRow({
             onClick={() => onDelete(user)}
             aria-label="Delete user"
             data-testid={`delete-user-${user.id}`}
+            disabled={user.role === UserRole.ADMIN}
           >
             <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
@@ -103,13 +118,13 @@ function UserRow({
 }
 
 export default function UsersPage() {
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [deletingUser, setDeletingUser] = useState<User | null>(null);
+  const [dialog, setDialog] = useState<DialogState>({ mode: DialogMode.NONE });
   const { data: users = [], isPending, isError } = useQuery({
     queryKey: ['users'],
     queryFn: fetchUsers,
   });
+
+  const closeDialog = () => setDialog({ mode: DialogMode.NONE });
 
   return (
     <div className="min-h-screen bg-background">
@@ -117,19 +132,22 @@ export default function UsersPage() {
       <main className="mx-auto max-w-7xl px-4 py-8">
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-2xl font-bold">Users</h1>
-          <Button onClick={() => setDialogOpen(true)}>New agent</Button>
+          <Button onClick={() => setDialog({ mode: DialogMode.CREATE })}>New agent</Button>
         </div>
 
-        <CreateUserDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+        <CreateUserDialog
+          open={dialog.mode === DialogMode.CREATE}
+          onOpenChange={(open) => { if (!open) closeDialog(); }}
+        />
         <EditUserDialog
-          open={!!editingUser}
-          user={editingUser}
-          onOpenChange={(open) => { if (!open) setEditingUser(null); }}
+          open={dialog.mode === DialogMode.EDIT}
+          user={dialog.mode === DialogMode.EDIT ? dialog.user : null}
+          onOpenChange={(open) => { if (!open) closeDialog(); }}
         />
         <DeleteUserDialog
-          open={!!deletingUser}
-          user={deletingUser}
-          onOpenChange={(open) => { if (!open) setDeletingUser(null); }}
+          open={dialog.mode === DialogMode.DELETE}
+          user={dialog.mode === DialogMode.DELETE ? dialog.user : null}
+          onOpenChange={(open) => { if (!open) closeDialog(); }}
         />
 
         {isError && <p className="text-destructive">Failed to load users.</p>}
@@ -155,7 +173,7 @@ export default function UsersPage() {
                 <TableBody>
                   {isPending
                     ? <SkeletonRows />
-                    : users.map((user) => <UserRow key={user.id} user={user} onEdit={setEditingUser} onDelete={setDeletingUser} />)
+                    : users.map((user) => <UserRow key={user.id} user={user} onEdit={(u) => setDialog({ mode: DialogMode.EDIT, user: u })} onDelete={(u) => setDialog({ mode: DialogMode.DELETE, user: u })} />)
                   }
                 </TableBody>
               </Table>
