@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
 import NavBar from '@/components/NavBar';
+import CreateUserDialog from '@/components/CreateUserDialog';
 import { UserRole } from '@/lib/constants';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -29,13 +32,18 @@ async function fetchUsers(): Promise<User[]> {
 }
 
 export default function UsersPage() {
+  const [dialogOpen, setDialogOpen] = useState(false);
   const { data: users = [], isPending, isError } = useQuery({ queryKey: ['users'], queryFn: fetchUsers });
 
   return (
     <div className="min-h-screen bg-background">
       <NavBar />
       <main className="mx-auto max-w-7xl px-4 py-8">
-        <h1 className="mb-6 text-2xl font-bold">Users</h1>
+        <div className="mb-6 flex items-center justify-between">
+          <h1 className="text-2xl font-bold">Users</h1>
+          <Button onClick={() => setDialogOpen(true)}>New agent</Button>
+        </div>
+        <CreateUserDialog open={dialogOpen} onOpenChange={setDialogOpen} />
         {isError && <p className="text-destructive">Failed to load users.</p>}
         {!isError && (
           <Card>
