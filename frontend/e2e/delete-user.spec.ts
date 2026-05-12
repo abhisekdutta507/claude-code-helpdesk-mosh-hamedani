@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { testUsers } from './test-credentials';
+import { login } from './helpers';
 
 // All delete-user tests require an admin session. We rely on the project-level
 // storageState (admin.json) injected by the chromium project — no explicit
@@ -270,5 +271,141 @@ test.describe('delete user — server error', () => {
 
     // Agent row must still be in the table
     await expect(page.getByRole('cell', { name: testUsers.agent1.email })).toBeVisible();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 8. Admin cannot be deleted (real 403 from the backend)
+// ---------------------------------------------------------------------------
+test.describe('delete user — admin is protected', () => {
+  test.beforeEach(async ({ page }) => {
+    await gotoUsers(page);
+  });
+
+  test('attempting to delete the admin user keeps the dialog open and the admin row in the table', async ({
+    page,
+  }) => {
+    // Open the dialog for the seeded admin user — no route interception, let the
+    // real 403 come back from the backend.
+    await openDeleteDialog(page, testUsers.admin.email);
+    await page.getByTestId('confirm-delete-user').click();
+
+    // The backend returns 403; the mutation fails, so the dialog must stay open.
+    await expect(page.getByRole('alertdialog')).toBeVisible();
+
+    // The admin row must still be present in the table.
+    await expect(page.getByRole('cell', { name: testUsers.admin.email })).toBeVisible();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 9. Cancel button is also disabled while the DELETE request is in flight
+// ---------------------------------------------------------------------------
+test.describe('delete user — Cancel disabled during in-flight request', () => {
+  test('Cancel button is disabled while the DELETE request is in flight', async ({ page }) => {
+    await gotoUsers(page);
+
+    const user = await createThrowawayUser(page, `cancel-disabled-${Date.now()}`);
+
+    await page.reload();
+    await expect(page.getByText(/^All users \(\d+\)$/)).toBeVisible();
+
+    // Delay the DELETE request so the in-flight state is observable.
+    await page.route('**/api/users/*', async (route) => {
+      if (route.request().method() === 'DELETE') {
+        await new Promise<void>((resolve) => setTimeout(resolve, 1500));
+        await route.continue();
+      } else {
+        await route.continue();
+      }
+    });
+
+    const dialog = await openDeleteDialog(page, user.email);
+    await page.getByTestId('confirm-delete-user').click();
+
+    // While the delayed request is in flight, Cancel must be disabled.
+    const cancelBtn = dialog.getByRole('button', { name: 'Cancel' });
+    await expect(cancelBtn).toBeDisabled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 10. Pressing Escape closes the dialog without deleting
+// ---------------------------------------------------------------------------
+test.describe('delete user — Escape closes dialog', () => {
+  test.beforeEach(async ({ page }) => {
+    await gotoUsers(page);
+  });
+
+  test('pressing Escape dismisses the dialog and leaves the user in the table', async ({
+    page,
+  }) => {
+    await openDeleteDialog(page, testUsers.agent1.email);
+
+    await page.keyboard.press('Escape');
+
+    // Dialog must be gone.
+    await expect(page.getByRole('alertdialog')).not.toBeVisible();
+
+    // Agent row must still be present.
+    await expect(page.getByRole('cell', { name: testUsers.agent1.email })).toBeVisible();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 11. 404 response keeps the dialog open
+// ---------------------------------------------------------------------------
+test.describe('delete user — 404 response', () => {
+  test.beforeEach(async ({ page }) => {
+    await gotoUsers(page);
+  });
+
+  test('a 404 response leaves the dialog open and does not remove the user row', async ({
+    page,
+  }) => {
+    await page.route('**/api/users/*', async (route) => {
+      if (route.request().method() === 'DELETE') {
+        await route.fulfill({
+          status: 404,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'User not found.' }),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+
+    const dialog = await openDeleteDialog(page, testUsers.agent1.email);
+    await page.getByTestId('confirm-delete-user').click();
+
+    // Mutation failed — dialog must remain open.
+    await expect(page.getByRole('alertdialog')).toBeVisible();
+
+    // The user row must still be visible.
+    await expect(page.getByRole('cell', { name: testUsers.agent1.email })).toBeVisible();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 12. Non-admin (agent) cannot access /users
+// ---------------------------------------------------------------------------
+test.describe('delete user — agent cannot access /users', () => {
+  // Must NOT use the shared admin.json session — log in fresh as the agent.
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  test('agent is redirected away from /users', async ({ page }) => {
+    await page.goto('/login');
+    await login(page, testUsers.agent1.email, testUsers.agent1.password);
+    await page.waitForURL('/');
+
+    await page.goto('/users');
+
+    // The AdminRoute guard must redirect to / or /login — either is acceptable.
+    const url = page.url();
+    const isRedirected = url.endsWith('/') || url.includes('/login');
+    expect(isRedirected).toBe(true);
+
+    // The users table heading must not be visible.
+    await expect(page.getByText(/^All users \(\d+\)$/)).not.toBeVisible();
   });
 });

@@ -8,6 +8,7 @@ import { createUserSchema, updateUserSchema, UserRole } from "@repo/shared/schem
 export function registerUsersRoutes(router: Router) {
   router.get("/users", requireAdmin, async (_req, res) => {
     const users = await prisma.user.findMany({
+      where: { deletedAt: null },
       select: {
         id: true,
         name: true,
@@ -82,7 +83,11 @@ export function registerUsersRoutes(router: Router) {
       return;
     }
 
-    await prisma.user.delete({ where: { id } });
+    await prisma.$transaction([
+      prisma.session.deleteMany({ where: { userId: id } }),
+      prisma.account.deleteMany({ where: { userId: id } }),
+      prisma.user.update({ where: { id }, data: { deletedAt: new Date() } }),
+    ]);
 
     res.status(204).send();
   });
