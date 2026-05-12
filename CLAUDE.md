@@ -10,7 +10,7 @@ AI-powered helpdesk ticket management system. Support emails are received via Se
 
 ## Tech Stack
 
-React 19 + Vite + Tailwind CSS + shadcn/ui + React Router (frontend) / Express 5 + Prisma + PostgreSQL (backend) / better-auth / Claude API / SendGrid.
+React 19 + Vite + Tailwind CSS + shadcn/ui + React Router + TanStack Query + axios (frontend) / Express 5 + Prisma + PostgreSQL (backend) / better-auth / Claude API / SendGrid.
 
 ## Package Manager
 
@@ -70,6 +70,13 @@ Handled by `express-rate-limit` in `backend/middleware/rateLimiter.ts`. Exports:
   export const UserRole = { ADMIN: 'ADMIN', AGENT: 'AGENT' } as const
   export type UserRole = (typeof UserRole)[keyof typeof UserRole]
   ```
+
+## Data Fetching
+
+- Use **axios** for all HTTP calls (not native `fetch`)
+- Use **TanStack Query** (`useQuery`) for server state — no manual `useEffect`/`useState` for fetching
+- `QueryClientProvider` wraps the app in `frontend/src/main.tsx`
+- axios is configured per-call with `withCredentials: true` for session cookies
 
 ## shadcn/ui
 
