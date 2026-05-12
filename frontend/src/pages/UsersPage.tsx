@@ -4,11 +4,12 @@ import { useQuery } from '@tanstack/react-query';
 import NavBar from '@/components/NavBar';
 import CreateUserDialog from '@/components/CreateUserDialog';
 import EditUserDialog from '@/components/EditUserDialog';
+import DeleteUserDialog from '@/components/DeleteUserDialog';
 import { UserRole } from '@repo/shared/schemas/user';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Pencil } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -24,7 +25,7 @@ type User = {
   id: string;
   name: string;
   email: string;
-  role: 'ADMIN' | 'AGENT';
+  role: UserRole;
   createdAt: string;
 };
 
@@ -56,7 +57,15 @@ function SkeletonRows() {
   );
 }
 
-function UserRow({ user, onEdit }: { user: User; onEdit: (user: User) => void }) {
+function UserRow({
+  user,
+  onEdit,
+  onDelete,
+}: {
+  user: User;
+  onEdit: (user: User) => void;
+  onDelete: (user: User) => void;
+}) {
   return (
     <TableRow>
       <TableCell className="px-6 font-medium">{user.name}</TableCell>
@@ -68,15 +77,26 @@ function UserRow({ user, onEdit }: { user: User; onEdit: (user: User) => void })
         {new Date(user.createdAt).toLocaleDateString()}
       </TableCell>
       <TableCell className="px-6">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => onEdit(user)}
-          aria-label="Edit user"
-          data-testid={`edit-user-${user.id}`}
-        >
-          <Pencil className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onEdit(user)}
+            aria-label="Edit user"
+            data-testid={`edit-user-${user.id}`}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onDelete(user)}
+            aria-label="Delete user"
+            data-testid={`delete-user-${user.id}`}
+          >
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        </div>
       </TableCell>
     </TableRow>
   );
@@ -85,6 +105,7 @@ function UserRow({ user, onEdit }: { user: User; onEdit: (user: User) => void })
 export default function UsersPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [deletingUser, setDeletingUser] = useState<User | null>(null);
   const { data: users = [], isPending, isError } = useQuery({
     queryKey: ['users'],
     queryFn: fetchUsers,
@@ -104,6 +125,11 @@ export default function UsersPage() {
           open={!!editingUser}
           user={editingUser}
           onOpenChange={(open) => { if (!open) setEditingUser(null); }}
+        />
+        <DeleteUserDialog
+          open={!!deletingUser}
+          user={deletingUser}
+          onOpenChange={(open) => { if (!open) setDeletingUser(null); }}
         />
 
         {isError && <p className="text-destructive">Failed to load users.</p>}
@@ -129,7 +155,7 @@ export default function UsersPage() {
                 <TableBody>
                   {isPending
                     ? <SkeletonRows />
-                    : users.map((user) => <UserRow key={user.id} user={user} onEdit={setEditingUser} />)
+                    : users.map((user) => <UserRow key={user.id} user={user} onEdit={setEditingUser} onDelete={setDeletingUser} />)
                   }
                 </TableBody>
               </Table>

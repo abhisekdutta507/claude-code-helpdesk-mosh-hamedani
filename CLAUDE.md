@@ -84,7 +84,16 @@ The repo is a Bun workspace with three packages: `backend/`, `frontend/`, `share
 
 ## shadcn/ui
 
-Add components with `bunx shadcn@latest add <component>` (outputs to `frontend/src/components/ui/`).
+Add components with `bunx shadcn@latest add <component>` from the `frontend/` directory.
+
+**Known issue:** shadcn misresolves the `@/` alias and writes files to `frontend/@/components/ui/` instead of `frontend/src/components/ui/`. After running the install command, manually copy the generated file:
+```sh
+cp "frontend/@/components/ui/<component>.tsx" "frontend/src/components/ui/<component>.tsx"
+```
+
+**API note:** This project uses `base-nova` style which pulls from `@base-ui/react` (not Radix). Component APIs differ from the Radix-based shadcn docs:
+- `AlertDialog.Root.Props.onOpenChange` signature is `(open: boolean, eventDetails) => void` — wrap it when passing a `(open: boolean) => void` handler: `onOpenChange={(open) => handler(open)}`
+- `AlertDialogCancel` renders a `@base-ui/react` Close button (auto-closes dialog); `AlertDialogAction` is a plain `Button` with no auto-close behavior
 
 ## Unit Testing Agent
 

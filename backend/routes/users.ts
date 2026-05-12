@@ -68,6 +68,20 @@ export function registerUsersRoutes(router: Router) {
     res.status(201).json(user);
   });
 
+  router.delete("/users/:id", requireAdmin, async (req, res) => {
+    const { id } = req.params as { id: string };
+
+    const existing = await prisma.user.findUnique({ where: { id } });
+    if (!existing) {
+      res.status(404).json({ error: "User not found." });
+      return;
+    }
+
+    await prisma.user.delete({ where: { id } });
+
+    res.status(204).send();
+  });
+
   router.put("/users/:id", requireAdmin, async (req, res) => {
     const result = updateUserSchema.safeParse(req.body);
     if (!result.success) {
