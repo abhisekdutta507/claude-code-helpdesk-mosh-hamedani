@@ -40,7 +40,7 @@ const MOCK_USER_2 = {
 type Props = {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  user?: typeof MOCK_USER | null;
+  user?: typeof MOCK_USER | typeof MOCK_USER_2 | null;
 };
 
 function renderDialog({ open = true, onOpenChange = vi.fn(), user = MOCK_USER }: Props = {}) {

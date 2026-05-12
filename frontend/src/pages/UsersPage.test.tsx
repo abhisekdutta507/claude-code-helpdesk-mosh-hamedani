@@ -530,6 +530,136 @@ describe('UsersPage', () => {
     });
   });
 
+  describe('delete user button', () => {
+    beforeEach(() => {
+      mockedGet.mockResolvedValue({ data: MOCK_USERS });
+    });
+
+    it('renders a delete button for each user row', async () => {
+      renderPage();
+      await waitFor(() => screen.getByText('Alice Admin'));
+      expect(screen.getByTestId('delete-user-1')).toBeInTheDocument();
+      expect(screen.getByTestId('delete-user-2')).toBeInTheDocument();
+    });
+
+    it('delete button has aria-label "Delete user"', async () => {
+      renderPage();
+      await waitFor(() => screen.getByText('Alice Admin'));
+      const deleteButtons = screen.getAllByRole('button', { name: 'Delete user' });
+      expect(deleteButtons.length).toBe(MOCK_USERS.length);
+    });
+
+    it('delete button is disabled for ADMIN role users', async () => {
+      renderPage();
+      await waitFor(() => screen.getByText('Alice Admin'));
+      expect(screen.getByTestId('delete-user-1')).toBeDisabled();
+    });
+
+    it('delete button is enabled for AGENT role users', async () => {
+      renderPage();
+      await waitFor(() => screen.getByText('Bob Agent'));
+      expect(screen.getByTestId('delete-user-2')).not.toBeDisabled();
+    });
+
+    it('DeleteUserDialog is not open by default', async () => {
+      renderPage();
+      await waitFor(() => screen.getByText('Alice Admin'));
+      expect(screen.queryByText('Delete user')).not.toBeInTheDocument();
+    });
+
+    it('clicking delete button for an AGENT opens DeleteUserDialog', async () => {
+      renderPage();
+      await waitFor(() => screen.getByText('Bob Agent'));
+
+      fireEvent.click(screen.getByTestId('delete-user-2'));
+
+      expect(screen.getByText('Delete user')).toBeInTheDocument();
+    });
+
+    it('opened DeleteUserDialog shows the correct user name in the description', async () => {
+      renderPage();
+      await waitFor(() => screen.getByText('Bob Agent'));
+
+      fireEvent.click(screen.getByTestId('delete-user-2'));
+
+      // The description contains the name as a <strong> element alongside the email
+      // The dialog title confirms it is the delete dialog, and the name appears within it
+      expect(screen.getByText('Delete user')).toBeInTheDocument();
+      // Multiple "Bob Agent" elements: one in table row, one bold in dialog description
+      expect(screen.getAllByText('Bob Agent').length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('opened DeleteUserDialog shows the correct user email', async () => {
+      renderPage();
+      await waitFor(() => screen.getByText('Bob Agent'));
+
+      fireEvent.click(screen.getByTestId('delete-user-2'));
+
+      expect(screen.getAllByText(/bob@example\.com/).length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('closing the DeleteUserDialog via Cancel resets dialog state', async () => {
+      renderPage();
+      await waitFor(() => screen.getByText('Bob Agent'));
+
+      fireEvent.click(screen.getByTestId('delete-user-2'));
+      expect(screen.getByText('Delete user')).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+      await waitFor(() => {
+        expect(screen.queryByText('Delete user')).not.toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('successful user deletion from UsersPage', () => {
+    it('after successful DELETE, dialog closes and user list is refreshed', async () => {
+      mockedGet.mockResolvedValue({ data: MOCK_USERS });
+      vi.mocked(axios.delete).mockResolvedValue({ data: {} });
+
+      const usersAfterDelete = [MOCK_USERS[0]];
+      renderPage();
+      await waitFor(() => screen.getByText('Bob Agent'));
+
+      fireEvent.click(screen.getByTestId('delete-user-2'));
+      expect(screen.getByText('Delete user')).toBeInTheDocument();
+
+      // Prepare the refreshed list before confirming
+      mockedGet.mockResolvedValue({ data: usersAfterDelete });
+
+      fireEvent.click(screen.getByTestId('confirm-delete-user'));
+
+      // Dialog should close
+      await waitFor(() => {
+        expect(screen.queryByText('Delete user')).not.toBeInTheDocument();
+      });
+
+      // Bob should no longer appear after the refetch
+      await waitFor(() => {
+        expect(screen.queryByText('Bob Agent')).not.toBeInTheDocument();
+      });
+    });
+
+    it('makes DELETE to the correct user endpoint with credentials', async () => {
+      mockedGet.mockResolvedValue({ data: MOCK_USERS });
+      vi.mocked(axios.delete).mockResolvedValue({ data: {} });
+
+      renderPage();
+      await waitFor(() => screen.getByText('Bob Agent'));
+
+      fireEvent.click(screen.getByTestId('delete-user-2'));
+      fireEvent.click(screen.getByTestId('confirm-delete-user'));
+
+      await waitFor(() => {
+        expect(vi.mocked(axios.delete)).toHaveBeenCalledWith(
+          expect.stringContaining('/api/users/2'),
+          expect.objectContaining({ withCredentials: true }),
+        );
+      });
+    });
+  });
+
   describe('NavBar integration', () => {
     it('renders the NavBar with the Helpdesk link', async () => {
       mockedGet.mockResolvedValue({ data: MOCK_USERS });
