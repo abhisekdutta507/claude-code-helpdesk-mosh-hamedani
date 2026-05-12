@@ -4,7 +4,7 @@ import { testUsers } from './test-credentials';
 
 test('home page shows welcome message', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /welcome, admin/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /welcome back, admin/i })).toBeVisible();
 });
 
 // Sign-out must use its own fresh session — calling signOut deletes the session

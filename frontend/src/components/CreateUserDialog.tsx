@@ -80,7 +80,7 @@ export default function CreateUserDialog({ open, onOpenChange }: Props) {
   });
 
   function onSubmit(data: CreateUserFormData) {
-    return mutation.mutateAsync(data);
+    mutation.mutate(data);
   }
 
   function handleOpenChange(next: boolean) {

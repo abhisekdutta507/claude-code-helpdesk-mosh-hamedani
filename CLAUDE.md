@@ -86,6 +86,10 @@ The repo is a Bun workspace with three packages: `backend/`, `frontend/`, `share
 
 Add components with `bunx shadcn@latest add <component>` (outputs to `frontend/src/components/ui/`).
 
+## Unit Testing Agent
+
+Use the `unit-test-writer` agent for all unit test work. Always run it with `run_in_background: true` so the user can continue working in VS Code while tests are being written.
+
 ## Unit Testing (Vitest + React Testing Library)
 
 Run unit tests from the `frontend/` directory:

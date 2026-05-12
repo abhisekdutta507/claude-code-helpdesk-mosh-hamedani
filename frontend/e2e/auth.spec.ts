@@ -76,14 +76,14 @@ test.describe('login — happy paths', () => {
     await page.goto('/login');
     await login(page, testUsers.admin.email, testUsers.admin.password);
     await page.waitForURL('/');
-    await expect(page.getByRole('heading', { name: /welcome, admin/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /welcome back, admin/i })).toBeVisible();
   });
 
   test('agent signs in with correct credentials and is redirected to home', async ({ page }) => {
     await page.goto('/login');
     await login(page, testUsers.agent1.email, testUsers.agent1.password);
     await page.waitForURL('/');
-    await expect(page.getByRole('heading', { name: /welcome,/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /welcome back,/i })).toBeVisible();
   });
 });
 
