@@ -132,6 +132,10 @@ Tests use ports 3001 (backend) and 5174 (frontend) to avoid conflicting with dev
 
 `authClient.signOut()` deletes the session row from the DB. Any test that calls sign-out **must** use `test.use({ storageState: { cookies: [], origins: [] } })` and log in fresh — sharing the pre-authed `admin.json` session would invalidate concurrent tests.
 
+## Auto-Memory vs CLAUDE.md
+
+Auto-memory files (`~/.claude/projects/.../memory/`) are machine-local and not checked in. Do not trim conventions from CLAUDE.md on the basis that they exist in memory — a new machine will have CLAUDE.md but not the memory files.
+
 ## Library Documentation
 
 Always use Context7 to fetch up-to-date docs before working with any library. Never rely solely on training data for API usage or configuration.
