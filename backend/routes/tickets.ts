@@ -30,6 +30,6 @@ export function registerTicketsRoutes(router: Router) {
       },
     });
 
-    res.set('Cache-Control', 'no-store').json(tickets);
+    res.set('Cache-Control', 'no-cache').json(tickets);
   });
 }
