@@ -26,6 +26,8 @@ interface Credentials {
 
 const env = parseEnvFile(envPath);
 
+export const apiBaseUrl = env.BETTER_AUTH_URL ?? 'http://localhost:3001';
+
 export const testUsers = {
   admin: {
     email: env.SEED_ADMIN_EMAIL,
