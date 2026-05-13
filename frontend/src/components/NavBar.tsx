@@ -19,6 +19,12 @@ export default function NavBar() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
         <div className="flex items-center gap-6">
           <Link to="/" className="text-lg font-semibold">Helpdesk</Link>
+          <Link
+            to="/tickets"
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Tickets
+          </Link>
           {isAdmin && (
             <Link
               to="/users"

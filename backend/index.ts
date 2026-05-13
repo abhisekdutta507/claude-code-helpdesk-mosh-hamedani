@@ -8,6 +8,7 @@ import { requireAuth } from "./middleware/requireAuth";
 import { authLimiter } from "./middleware/rateLimiter";
 import { registerInboundRoutes } from "./routes/inbound";
 import { registerUsersRoutes } from "./routes/users";
+import { registerTicketsRoutes } from "./routes/tickets";
 
 const app = express();
 const PORT = process.env.PORT ?? 3000;
@@ -47,5 +48,6 @@ app.listen(PORT, () => {
 });
 
 registerUsersRoutes(apiRouter);
+registerTicketsRoutes(apiRouter);
 
 export { apiRouter };
