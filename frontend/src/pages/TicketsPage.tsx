@@ -193,6 +193,7 @@ export default function TicketsPage() {
   const { data: tickets = [], isPending, isError } = useQuery({
     queryKey: ['tickets', sortBy, sortDir],
     queryFn: () => fetchTickets(sortBy, sortDir),
+    staleTime: 60_000,
   });
 
   const table = useReactTable({
