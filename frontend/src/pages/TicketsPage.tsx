@@ -1,5 +1,14 @@
+import { useState } from 'react';
 import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
+import {
+  useReactTable,
+  getCoreRowModel,
+  flexRender,
+  type ColumnDef,
+  type SortingState,
+} from '@tanstack/react-table';
+import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import NavBar from '@/components/NavBar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,7 +20,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { TicketStatus, TicketCategory } from '@repo/shared/schemas/ticket';
+import {
+  TicketStatus,
+  TicketCategory,
+  TicketSortBy,
+  TicketSortDir,
+  type TicketSortBy as TicketSortByType,
+  type TicketSortDir as TicketSortDirType,
+} from '@repo/shared/schemas/ticket';
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
@@ -26,8 +42,11 @@ type Ticket = {
   agent: { id: string; name: string } | null;
 };
 
-async function fetchTickets(): Promise<Ticket[]> {
-  const res = await axios.get<Ticket[]>(`${API_URL}/api/tickets`, { withCredentials: true });
+async function fetchTickets(sortBy: TicketSortByType, sortDir: TicketSortDirType): Promise<Ticket[]> {
+  const res = await axios.get<Ticket[]>(`${API_URL}/api/tickets`, {
+    withCredentials: true,
+    params: { sortBy, sortDir },
+  });
   return res.data;
 }
 
@@ -46,6 +65,106 @@ const categoryLabel: Record<TicketCategory, string> = {
   [TicketCategory.REFUND_REQUEST]: 'Refund',
 };
 
+function SortIcon({ sorted }: { sorted: false | 'asc' | 'desc' }) {
+  if (sorted === 'asc') return <ArrowUp className="ml-1 inline h-3 w-3" />;
+  if (sorted === 'desc') return <ArrowDown className="ml-1 inline h-3 w-3" />;
+  return <ArrowUpDown className="ml-1 inline h-3 w-3 text-muted-foreground" />;
+}
+
+const columns: ColumnDef<Ticket>[] = [
+  {
+    accessorKey: 'subject',
+    header: ({ column }) => (
+      <button
+        className="flex cursor-pointer items-center font-medium"
+        onClick={column.getToggleSortingHandler()}
+      >
+        Subject
+        <SortIcon sorted={column.getIsSorted()} />
+      </button>
+    ),
+    cell: ({ row }) => (
+      <span className="font-medium max-w-xs truncate block">{row.original.subject}</span>
+    ),
+  },
+  {
+    accessorKey: 'fromEmail',
+    header: ({ column }) => (
+      <button
+        className="flex cursor-pointer items-center font-medium"
+        onClick={column.getToggleSortingHandler()}
+      >
+        From
+        <SortIcon sorted={column.getIsSorted()} />
+      </button>
+    ),
+    cell: ({ row }) => (
+      <span className="text-muted-foreground">{row.original.fromEmail}</span>
+    ),
+  },
+  {
+    accessorKey: 'status',
+    header: ({ column }) => (
+      <button
+        className="flex cursor-pointer items-center font-medium"
+        onClick={column.getToggleSortingHandler()}
+      >
+        Status
+        <SortIcon sorted={column.getIsSorted()} />
+      </button>
+    ),
+    cell: ({ row }) => (
+      <span className={statusBadgeClass[row.original.status]}>{row.original.status}</span>
+    ),
+  },
+  {
+    accessorKey: 'category',
+    header: ({ column }) => (
+      <button
+        className="flex cursor-pointer items-center font-medium"
+        onClick={column.getToggleSortingHandler()}
+      >
+        Category
+        <SortIcon sorted={column.getIsSorted()} />
+      </button>
+    ),
+    cell: ({ row }) =>
+      row.original.category ? (
+        <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
+          {categoryLabel[row.original.category]}
+        </span>
+      ) : (
+        <span className="text-muted-foreground text-xs">—</span>
+      ),
+  },
+  {
+    id: 'agent',
+    header: 'Agent',
+    cell: ({ row }) => (
+      <span className="text-muted-foreground">
+        {row.original.agent?.name ?? <span className="text-xs">Unassigned</span>}
+      </span>
+    ),
+  },
+  {
+    accessorKey: 'createdAt',
+    header: ({ column }) => (
+      <button
+        className="flex cursor-pointer items-center font-medium"
+        onClick={column.getToggleSortingHandler()}
+      >
+        Date
+        <SortIcon sorted={column.getIsSorted()} />
+      </button>
+    ),
+    cell: ({ row }) => (
+      <span className="text-muted-foreground">
+        {new Date(row.original.createdAt).toLocaleString()}
+      </span>
+    ),
+  },
+];
+
 function SkeletonRows() {
   return (
     <>
@@ -63,37 +182,28 @@ function SkeletonRows() {
   );
 }
 
-function TicketRow({ ticket }: { ticket: Ticket }) {
-  return (
-    <TableRow>
-      <TableCell className="px-6 font-medium max-w-xs truncate">{ticket.subject}</TableCell>
-      <TableCell className="px-6 text-muted-foreground">{ticket.fromEmail}</TableCell>
-      <TableCell className="px-6">
-        <span className={statusBadgeClass[ticket.status]}>{ticket.status}</span>
-      </TableCell>
-      <TableCell className="px-6">
-        {ticket.category ? (
-          <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
-            {categoryLabel[ticket.category]}
-          </span>
-        ) : (
-          <span className="text-muted-foreground text-xs">—</span>
-        )}
-      </TableCell>
-      <TableCell className="px-6 text-muted-foreground">
-        {ticket.agent?.name ?? <span className="text-xs">Unassigned</span>}
-      </TableCell>
-      <TableCell className="px-6 text-muted-foreground">
-        {new Date(ticket.createdAt).toLocaleDateString()}
-      </TableCell>
-    </TableRow>
-  );
-}
-
 export default function TicketsPage() {
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'createdAt', desc: true }]);
+
+  const sortBy = (sorting[0]?.id ?? TicketSortBy.CREATED_AT) as TicketSortByType;
+  const sortDir = sorting[0]
+    ? (sorting[0].desc ? TicketSortDir.DESC : TicketSortDir.ASC)
+    : TicketSortDir.DESC;
+
   const { data: tickets = [], isPending, isError } = useQuery({
-    queryKey: ['tickets'],
-    queryFn: fetchTickets,
+    queryKey: ['tickets', sortBy, sortDir],
+    queryFn: () => fetchTickets(sortBy, sortDir),
+  });
+
+  const table = useReactTable({
+    data: tickets,
+    columns,
+    state: { sorting },
+    onSortingChange: setSorting,
+    manualSorting: true,
+    enableMultiSort: false,
+    enableSortingRemoval: false,
+    getCoreRowModel: getCoreRowModel(),
   });
 
   return (
@@ -116,19 +226,30 @@ export default function TicketsPage() {
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="px-6">Subject</TableHead>
-                    <TableHead className="px-6">From</TableHead>
-                    <TableHead className="px-6">Status</TableHead>
-                    <TableHead className="px-6">Category</TableHead>
-                    <TableHead className="px-6">Agent</TableHead>
-                    <TableHead className="px-6">Date</TableHead>
-                  </TableRow>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <TableRow key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => (
+                        <TableHead key={header.id} className="px-6">
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(header.column.columnDef.header, header.getContext())}
+                        </TableHead>
+                      ))}
+                    </TableRow>
+                  ))}
                 </TableHeader>
                 <TableBody>
                   {isPending
                     ? <SkeletonRows />
-                    : tickets.map((ticket) => <TicketRow key={ticket.id} ticket={ticket} />)
+                    : table.getRowModel().rows.map((row) => (
+                        <TableRow key={row.id}>
+                          {row.getVisibleCells().map((cell) => (
+                            <TableCell key={cell.id} className="px-6">
+                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))
                   }
                 </TableBody>
               </Table>

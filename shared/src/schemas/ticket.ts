@@ -24,3 +24,30 @@ export const inboundEmailSchema = z.object({
 });
 
 export type InboundEmailInput = z.infer<typeof inboundEmailSchema>;
+
+export const TicketSortBy = {
+  SUBJECT: "subject",
+  FROM_EMAIL: "fromEmail",
+  STATUS: "status",
+  CATEGORY: "category",
+  CREATED_AT: "createdAt",
+} as const;
+
+export type TicketSortBy = (typeof TicketSortBy)[keyof typeof TicketSortBy];
+
+export const TicketSortDir = {
+  ASC: "asc",
+  DESC: "desc",
+} as const;
+
+export type TicketSortDir = (typeof TicketSortDir)[keyof typeof TicketSortDir];
+
+const sortByValues = Object.values(TicketSortBy) as [TicketSortBy, ...TicketSortBy[]];
+const sortDirValues = Object.values(TicketSortDir) as [TicketSortDir, ...TicketSortDir[]];
+
+export const ticketQuerySchema = z.object({
+  sortBy: z.enum(sortByValues).optional().default(TicketSortBy.CREATED_AT),
+  sortDir: z.enum(sortDirValues).optional().default(TicketSortDir.DESC),
+});
+
+export type TicketQueryParams = z.infer<typeof ticketQuerySchema>;
