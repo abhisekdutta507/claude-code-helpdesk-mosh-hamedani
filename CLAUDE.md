@@ -31,6 +31,8 @@ export $(grep -v '^#' .env | xargs) && bun run prisma migrate deploy
 
 `backend/seed.ts` is idempotent — creates users from `SEED_ADMIN_EMAIL`/`SEED_AGENT1_EMAIL` env vars.
 
+> **Hot reload caveat:** Bun's `--hot` flag silently fails to reload changed route files. **Always restart the backend server after any backend file change** — otherwise the old code keeps running and changes have no effect.
+
 ## Authentication
 
 - Auth via `authClient` (from `@/lib/auth-client`); sessions in PostgreSQL

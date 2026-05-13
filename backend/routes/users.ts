@@ -6,6 +6,15 @@ import { z } from "zod";
 import { createUserSchema, updateUserSchema, UserRole } from "@repo/shared/schemas/user";
 
 export function registerUsersRoutes(router: Router) {
+  router.get("/agents", async (_req, res) => {
+    const agents = await prisma.user.findMany({
+      where: { deletedAt: null, role: UserRole.AGENT },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    });
+    res.json(agents);
+  });
+
   router.get("/users", requireAdmin, async (_req, res) => {
     const users = await prisma.user.findMany({
       where: { deletedAt: null },
