@@ -7,11 +7,11 @@ import { apiBaseUrl } from './test-credentials';
 
 /**
  * Navigate to /tickets and wait until data has loaded.
- * "All tickets (N)" in the card title signals the fetch has completed.
+ * "N tickets" in the card title signals the fetch has completed.
  */
 async function gotoTickets(page: import('@playwright/test').Page) {
   await page.goto('/tickets');
-  await expect(page.getByText(/^All tickets \(\d+\)$/)).toBeVisible();
+  await expect(page.getByText(/^\d+ tickets?$/)).toBeVisible();
 }
 
 /**
@@ -115,16 +115,11 @@ test.describe('tickets sorting — subject column cycle', () => {
     await expect(columnHeader(page, 'Subject').locator('svg.lucide-arrow-down')).toBeVisible();
 
     // Click 3 → wraps back to asc
-    const requestPromise = page.waitForRequest(
-      (req) =>
-        req.url().includes('/api/tickets') &&
-        req.url().includes('sortBy=subject') &&
-        req.url().includes('sortDir=asc'),
-    );
-
     await columnHeader(page, 'Subject').getByRole('button').click();
 
-    await requestPromise;
+    // URL should reflect sortDir=asc (sort is never removed — cycles asc→desc→asc)
+    await expect(page).toHaveURL(/sortBy=subject/);
+    await expect(page).toHaveURL(/sortDir=asc/);
 
     await expect(columnHeader(page, 'Subject').locator('svg.lucide-arrow-up')).toBeVisible();
   });
@@ -217,7 +212,8 @@ test.describe('tickets sorting — API validation', () => {
     });
 
     expect(res.status()).toBe(200);
-    const body = await res.json() as unknown[];
-    expect(Array.isArray(body)).toBe(true);
+    const body = await res.json() as { tickets: unknown[]; total: number };
+    // The API returns a paginated object with a tickets array
+    expect(Array.isArray(body.tickets)).toBe(true);
   });
 });

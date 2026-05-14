@@ -2,7 +2,7 @@ import type { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../db";
 import type { Prisma } from "../generated/prisma/client";
-import { ticketQuerySchema, TicketDateRange, PAGE_SIZE } from "@repo/shared/schemas/ticket";
+import { ticketQuerySchema, TicketDateRange, PAGE_SIZE, TicketStatus, TicketCategory } from "@repo/shared/schemas/ticket";
 
 function dateRangeToFilter(dateRange: TicketDateRange): Prisma.TicketWhereInput {
   const now = new Date();
@@ -52,6 +52,32 @@ export function registerTicketsRoutes(router: Router) {
     }
 
     res.set("Cache-Control", "no-cache").json(ticket);
+  });
+
+  router.patch("/tickets/:id", async (req, res) => {
+    const bodySchema = z.object({
+      status: z.enum(Object.values(TicketStatus) as [TicketStatus, ...TicketStatus[]]).optional(),
+      category: z.enum(Object.values(TicketCategory) as [TicketCategory, ...TicketCategory[]]).nullable().optional(),
+    });
+    const result = bodySchema.safeParse(req.body);
+    if (!result.success) {
+      res.status(400).json({ error: "Invalid request body", details: z.flattenError(result.error).fieldErrors });
+      return;
+    }
+
+    const ticket = await prisma.ticket.findUnique({ where: { id: req.params.id }, select: { id: true } });
+    if (!ticket) {
+      res.status(404).json({ error: "Ticket not found" });
+      return;
+    }
+
+    const updated = await prisma.ticket.update({
+      where: { id: req.params.id },
+      data: result.data,
+      select: { id: true, status: true, category: true },
+    });
+
+    res.json(updated);
   });
 
   router.patch("/tickets/:id/agent", async (req, res) => {

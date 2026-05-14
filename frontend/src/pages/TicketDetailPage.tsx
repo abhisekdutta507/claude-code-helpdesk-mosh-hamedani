@@ -24,15 +24,6 @@ type TicketDetail = {
   agent: { id: string; name: string } | null;
 };
 
-const statusBadgeClass: Record<string, string> = {
-  [TicketStatus.OPEN]:
-    'inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700',
-  [TicketStatus.RESOLVED]:
-    'inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700',
-  [TicketStatus.CLOSED]:
-    'inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground',
-};
-
 const categoryLabel: Record<string, string> = {
   [TicketCategory.GENERAL_QUESTION]: 'General',
   [TicketCategory.TECHNICAL_QUESTION]: 'Technical',
@@ -55,6 +46,10 @@ async function fetchAgents(): Promise<Agent[]> {
 
 async function assignAgent(ticketId: string, agentId: string | null): Promise<void> {
   await axios.patch(`${API_URL}/api/tickets/${ticketId}/agent`, { agentId }, { withCredentials: true });
+}
+
+async function updateTicket(ticketId: string, data: { status?: string; category?: string | null }): Promise<void> {
+  await axios.patch(`${API_URL}/api/tickets/${ticketId}`, data, { withCredentials: true });
 }
 
 export default function TicketDetailPage() {
@@ -82,6 +77,14 @@ export default function TicketDetailPage() {
     },
   });
 
+  const { mutate: update, isPending: isUpdating } = useMutation({
+    mutationFn: (data: { status?: string; category?: string | null }) => updateTicket(id!, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ticket', id] });
+      queryClient.invalidateQueries({ queryKey: ['tickets'] });
+    },
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <NavBar />
@@ -102,47 +105,75 @@ export default function TicketDetailPage() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <div className="flex items-start justify-between gap-4">
-                  <CardTitle className="text-xl leading-snug">
-                    {isPending ? <Skeleton className="h-6 w-96" /> : ticket!.subject}
-                  </CardTitle>
-                  {isPending ? (
-                    <Skeleton className="h-5 w-16 shrink-0 rounded-full" />
-                  ) : (
-                    <span className={`${statusBadgeClass[ticket!.status]} shrink-0`}>
-                      {ticket!.status}
-                    </span>
-                  )}
-                </div>
+                <CardTitle className="text-xl leading-snug">
+                  {isPending ? <Skeleton className="h-6 w-96" /> : ticket!.subject}
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+                <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
                   <div>
-                    <dt className="font-medium text-muted-foreground">From</dt>
-                    <dd>{isPending ? <Skeleton className="mt-1 h-4 w-48" /> : ticket!.fromEmail}</dd>
+                    <dt className="mb-1 font-medium text-muted-foreground">From</dt>
+                    <dd>{isPending ? <Skeleton className="h-4 w-48" /> : ticket!.fromEmail}</dd>
                   </div>
                   <div>
-                    <dt className="font-medium text-muted-foreground">Category</dt>
+                    <dt className="mb-1 font-medium text-muted-foreground">Created</dt>
                     <dd>
                       {isPending ? (
-                        <Skeleton className="mt-1 h-4 w-24" />
-                      ) : ticket!.category ? (
-                        <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
-                          {categoryLabel[ticket!.category]}
-                        </span>
+                        <Skeleton className="h-4 w-40" />
                       ) : (
-                        <span className="text-muted-foreground">—</span>
+                        new Date(ticket!.createdAt).toLocaleString()
                       )}
                     </dd>
                   </div>
                   <div>
-                    <dt className="font-medium text-muted-foreground">Assigned agent</dt>
-                    <dd className="mt-1">
+                    <dt className="mb-1 font-medium text-muted-foreground">Status</dt>
+                    <dd>
                       {isPending ? (
-                        <Skeleton className="h-8 w-40" />
+                        <Skeleton className="h-9 w-36" />
                       ) : (
                         <select
-                          className="h-8 rounded-md border border-input bg-background px-2 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
+                          className="h-9 w-48 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
+                          value={ticket!.status}
+                          disabled={isUpdating}
+                          onChange={(e) => update({ status: e.target.value })}
+                          aria-label="Ticket status"
+                        >
+                          {Object.values(TicketStatus).map((s) => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
+                      )}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="mb-1 font-medium text-muted-foreground">Category</dt>
+                    <dd>
+                      {isPending ? (
+                        <Skeleton className="h-9 w-36" />
+                      ) : (
+                        <select
+                          className="h-9 w-48 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
+                          value={ticket!.category ?? ''}
+                          disabled={isUpdating}
+                          onChange={(e) => update({ category: e.target.value === '' ? null : e.target.value })}
+                          aria-label="Ticket category"
+                        >
+                          <option value="">Uncategorised</option>
+                          {Object.entries(categoryLabel).map(([value, label]) => (
+                            <option key={value} value={value}>{label}</option>
+                          ))}
+                        </select>
+                      )}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="mb-1 font-medium text-muted-foreground">Assigned agent</dt>
+                    <dd>
+                      {isPending ? (
+                        <Skeleton className="h-9 w-36" />
+                      ) : (
+                        <select
+                          className="h-9 w-48 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
                           value={ticket!.agent?.id ?? ''}
                           disabled={isAssigning}
                           onChange={(e) => assign(e.target.value === '' ? null : e.target.value)}
@@ -153,16 +184,6 @@ export default function TicketDetailPage() {
                             <option key={a.id} value={a.id}>{a.name}</option>
                           ))}
                         </select>
-                      )}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="font-medium text-muted-foreground">Created</dt>
-                    <dd>
-                      {isPending ? (
-                        <Skeleton className="mt-1 h-4 w-40" />
-                      ) : (
-                        new Date(ticket!.createdAt).toLocaleString()
                       )}
                     </dd>
                   </div>
