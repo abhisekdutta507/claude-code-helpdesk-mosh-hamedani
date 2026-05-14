@@ -54,6 +54,42 @@ export function registerTicketsRoutes(router: Router) {
     res.set("Cache-Control", "no-cache").json(ticket);
   });
 
+  router.patch("/tickets/:id/agent", async (req, res) => {
+    const bodySchema = z.object({
+      agentId: z.string().nullable(),
+    });
+    const result = bodySchema.safeParse(req.body);
+    if (!result.success) {
+      res.status(400).json({ error: "Invalid request body", details: z.flattenError(result.error).fieldErrors });
+      return;
+    }
+
+    const ticket = await prisma.ticket.findUnique({ where: { id: req.params.id }, select: { id: true } });
+    if (!ticket) {
+      res.status(404).json({ error: "Ticket not found" });
+      return;
+    }
+
+    if (result.data.agentId !== null) {
+      const agent = await prisma.user.findUnique({ where: { id: result.data.agentId }, select: { id: true } });
+      if (!agent) {
+        res.status(400).json({ error: "Invalid request body", details: { agentId: ["Agent not found"] } });
+        return;
+      }
+    }
+
+    const updated = await prisma.ticket.update({
+      where: { id: req.params.id },
+      data: { agentId: result.data.agentId },
+      select: {
+        id: true,
+        agent: { select: { id: true, name: true } },
+      },
+    });
+
+    res.json(updated);
+  });
+
   router.get("/tickets", async (req, res) => {
     const result = ticketQuerySchema.safeParse(req.query);
     if (!result.success) {

@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
 import NavBar from '@/components/NavBar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,6 +39,8 @@ const categoryLabel: Record<string, string> = {
   [TicketCategory.REFUND_REQUEST]: 'Refund',
 };
 
+type Agent = { id: string; name: string };
+
 async function fetchTicket(id: string): Promise<TicketDetail> {
   const res = await axios.get<TicketDetail>(`${API_URL}/api/tickets/${id}`, {
     withCredentials: true,
@@ -46,14 +48,38 @@ async function fetchTicket(id: string): Promise<TicketDetail> {
   return res.data;
 }
 
+async function fetchAgents(): Promise<Agent[]> {
+  const res = await axios.get<Agent[]>(`${API_URL}/api/agents`, { withCredentials: true });
+  return res.data;
+}
+
+async function assignAgent(ticketId: string, agentId: string | null): Promise<void> {
+  await axios.patch(`${API_URL}/api/tickets/${ticketId}/agent`, { agentId }, { withCredentials: true });
+}
+
 export default function TicketDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
 
   const { data: ticket, isPending, isError } = useQuery({
     queryKey: ['ticket', id],
     queryFn: () => fetchTicket(id!),
     enabled: !!id,
     staleTime: 60_000,
+  });
+
+  const { data: agents = [] } = useQuery({
+    queryKey: ['agents'],
+    queryFn: fetchAgents,
+    staleTime: 5 * 60_000,
+  });
+
+  const { mutate: assign, isPending: isAssigning } = useMutation({
+    mutationFn: (agentId: string | null) => assignAgent(id!, agentId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ticket', id] });
+      queryClient.invalidateQueries({ queryKey: ['tickets'] });
+    },
   });
 
   return (
@@ -111,7 +137,24 @@ export default function TicketDetailPage() {
                   </div>
                   <div>
                     <dt className="font-medium text-muted-foreground">Assigned agent</dt>
-                    <dd>{isPending ? <Skeleton className="mt-1 h-4 w-32" /> : (ticket!.agent?.name ?? <span className="text-muted-foreground text-xs">Unassigned</span>)}</dd>
+                    <dd className="mt-1">
+                      {isPending ? (
+                        <Skeleton className="h-8 w-40" />
+                      ) : (
+                        <select
+                          className="h-8 rounded-md border border-input bg-background px-2 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
+                          value={ticket!.agent?.id ?? ''}
+                          disabled={isAssigning}
+                          onChange={(e) => assign(e.target.value === '' ? null : e.target.value)}
+                          aria-label="Assign agent"
+                        >
+                          <option value="">Unassigned</option>
+                          {agents.map((a) => (
+                            <option key={a.id} value={a.id}>{a.name}</option>
+                          ))}
+                        </select>
+                      )}
+                    </dd>
                   </div>
                   <div>
                     <dt className="font-medium text-muted-foreground">Created</dt>
