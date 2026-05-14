@@ -30,6 +30,11 @@ function parseEmail(header: string): string {
   return header.toLowerCase().trim();
 }
 
+// Strip Re:/Fwd: prefixes so replies match the original ticket subject
+function normalizeSubject(subject: string): string {
+  return subject.replace(/^(re|fwd?):\s*/i, "").trim();
+}
+
 
 function extractBody(text: string | undefined, html: string | undefined): string {
   if (text && text.trim().length > 0) return text.trim();
@@ -60,16 +65,40 @@ export function registerInboundRoutes(router: Router): void {
 
       // Idempotency: deduplicate retries within a 5-minute window
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-      const existing = await prisma.ticket.findFirst({
+      const recentDuplicate = await prisma.ticket.findFirst({
         where: {
           fromEmail: result.data.from,
           subject: result.data.subject,
+          body: result.data.body,
           createdAt: { gte: fiveMinutesAgo },
         },
         select: { id: true },
       });
-      if (existing) {
-        res.status(200).json({ ok: true, ticketId: existing.id, duplicate: true });
+      if (recentDuplicate) {
+        res.status(200).json({ ok: true, ticketId: recentDuplicate.id, duplicate: true });
+        return;
+      }
+
+      // If this looks like a reply (Re:/Fwd: prefix or same base subject), attach to existing ticket
+      const baseSubject = normalizeSubject(result.data.subject);
+      const parentTicket = await prisma.ticket.findFirst({
+        where: {
+          fromEmail: result.data.from,
+          subject: { equals: baseSubject, mode: "insensitive" },
+        },
+        orderBy: { createdAt: "desc" },
+        select: { id: true },
+      });
+
+      if (parentTicket) {
+        await prisma.reply.create({
+          data: {
+            ticketId: parentTicket.id,
+            fromEmail: result.data.from,
+            body: result.data.body,
+          },
+        });
+        res.status(200).json({ ok: true, ticketId: parentTicket.id, reply: true });
         return;
       }
 

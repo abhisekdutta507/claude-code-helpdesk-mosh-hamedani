@@ -1,10 +1,12 @@
+import { useState, useRef, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Send } from 'lucide-react';
 import NavBar from '@/components/NavBar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import { TicketStatus, TicketCategory } from '@repo/shared/schemas/ticket';
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
@@ -22,6 +24,14 @@ type TicketDetail = {
   createdAt: string;
   updatedAt: string;
   agent: { id: string; name: string } | null;
+};
+
+type Reply = {
+  id: string;
+  body: string;
+  createdAt: string;
+  fromEmail: string | null;
+  author: { id: string; name: string } | null;
 };
 
 const categoryLabel: Record<string, string> = {
@@ -44,6 +54,13 @@ async function fetchAgents(): Promise<Agent[]> {
   return res.data;
 }
 
+async function fetchReplies(ticketId: string): Promise<Reply[]> {
+  const res = await axios.get<Reply[]>(`${API_URL}/api/tickets/${ticketId}/replies`, {
+    withCredentials: true,
+  });
+  return res.data;
+}
+
 async function assignAgent(ticketId: string, agentId: string | null): Promise<void> {
   await axios.patch(`${API_URL}/api/tickets/${ticketId}/agent`, { agentId }, { withCredentials: true });
 }
@@ -52,9 +69,20 @@ async function updateTicket(ticketId: string, data: { status?: string; category?
   await axios.patch(`${API_URL}/api/tickets/${ticketId}`, data, { withCredentials: true });
 }
 
+async function postReply(ticketId: string, body: string): Promise<Reply> {
+  const res = await axios.post<Reply>(
+    `${API_URL}/api/tickets/${ticketId}/replies`,
+    { body },
+    { withCredentials: true },
+  );
+  return res.data;
+}
+
 export default function TicketDetailPage() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
+  const [replyText, setReplyText] = useState('');
+  const threadEndRef = useRef<HTMLDivElement>(null);
 
   const { data: ticket, isPending, isError } = useQuery({
     queryKey: ['ticket', id],
@@ -67,6 +95,13 @@ export default function TicketDetailPage() {
     queryKey: ['agents'],
     queryFn: fetchAgents,
     staleTime: 5 * 60_000,
+  });
+
+  const { data: replies = [], isPending: repliesPending } = useQuery({
+    queryKey: ['replies', id],
+    queryFn: () => fetchReplies(id!),
+    enabled: !!id,
+    staleTime: 30_000,
   });
 
   const { mutate: assign, isPending: isAssigning } = useMutation({
@@ -84,6 +119,27 @@ export default function TicketDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['tickets'] });
     },
   });
+
+  const { mutate: submitReply, isPending: isSubmitting } = useMutation({
+    mutationFn: (body: string) => postReply(id!, body),
+    onSuccess: () => {
+      setReplyText('');
+      queryClient.invalidateQueries({ queryKey: ['replies', id] });
+    },
+  });
+
+  useEffect(() => {
+    if (!repliesPending) {
+      threadEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [replies.length, repliesPending]);
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = replyText.trim();
+    if (!trimmed) return;
+    submitReply(trimmed);
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -229,6 +285,59 @@ export default function TicketDetailPage() {
                 ) : (
                   <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">{ticket!.body}</pre>
                 )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">
+                  Replies{!repliesPending && replies.length > 0 && (
+                    <span className="ml-2 text-sm font-normal text-muted-foreground">({replies.length})</span>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {repliesPending ? (
+                  <div className="space-y-3">
+                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-16 w-full" />
+                  </div>
+                ) : replies.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No replies yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {replies.map((reply) => (
+                      <div key={reply.id} className="rounded-lg border bg-muted/30 px-4 py-3">
+                        <div className="mb-1.5 flex items-center gap-2 text-xs text-muted-foreground">
+                          <span className="font-medium text-foreground">
+                            {reply.author ? reply.author.name : (reply.fromEmail ?? 'Customer')}
+                          </span>
+                          <span>·</span>
+                          <span>{new Date(reply.createdAt).toLocaleString()}</span>
+                        </div>
+                        <p className="whitespace-pre-wrap text-sm leading-relaxed">{reply.body}</p>
+                      </div>
+                    ))}
+                    <div ref={threadEndRef} />
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="mt-4 space-y-2">
+                  <textarea
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
+                    rows={4}
+                    placeholder="Write a reply..."
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    disabled={isSubmitting}
+                  />
+                  <div className="flex justify-end">
+                    <Button type="submit" disabled={isSubmitting || !replyText.trim()} size="sm">
+                      <Send className="mr-1.5 h-3.5 w-3.5" />
+                      {isSubmitting ? 'Sending…' : 'Send reply'}
+                    </Button>
+                  </div>
+                </form>
               </CardContent>
             </Card>
           </div>

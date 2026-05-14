@@ -43,6 +43,23 @@ type: project
 - On success: `queryClient.invalidateQueries({ queryKey: ['users'] })`, then `onOpenChange(false)`
 - PUT endpoint: `${API_URL}/api/users/${user.id}` with `{ withCredentials: true }`
 
+## TicketDetailPage (`frontend/src/pages/TicketDetailPage.tsx`)
+
+- Makes 3 GET calls: `/api/tickets/:id`, `/api/agents`, `/api/tickets/:id/replies`
+- URL ordering in mocks: always check `/api/tickets/:id/replies` BEFORE `/api/tickets/:id` — the replies URL contains the ticket URL as a substring, so checking ticket first would swallow both
+- `scrollIntoView` is not implemented in jsdom — add `window.HTMLElement.prototype.scrollIntoView = vi.fn()` at module level
+- AI Summary card: shown when `isPending || ticket.summary` — always visible during loading, only when summary non-null after load
+  - To test "summary shown after load": `await screen.findByText('Help needed')` first (confirm load), then assert AI Summary + summary text
+  - To test "summary hidden when null": after `findByText('Help needed')`, assert `queryByText('AI Summary')` returns null
+- Reply author: agent reply uses `reply.author.name`; customer reply uses `reply.fromEmail`
+  - Agent name also appears in agent select `<option>` — use `getAllByText()` or query by reply body text first
+  - Customer email also appears in "From" field — use `getAllByText()` or query by reply body first
+- Status/category/agent are `<select>` with `aria-label` — query with `getByRole('combobox', { name: /.../ })`
+- Agent mutation: PATCH `/api/tickets/:id/agent` with `{ agentId }` (null when empty string selected)
+- Ticket mutation: PATCH `/api/tickets/:id` with `{ status }` or `{ category }` (null when empty string)
+- Reply submit button text: `'Sending…'` (U+2026) while `isSubmitting`
+- `useParams` must be mocked to return `{ id: 'ticket-1' }` since component uses `useParams<{ id: string }>()`
+
 ## Shared schema location
 
 `@repo/shared/schemas/user` — exports `createUserSchema`, `updateUserSchema`, `UserRole`, `CreateUserInput`, `UpdateUserInput`

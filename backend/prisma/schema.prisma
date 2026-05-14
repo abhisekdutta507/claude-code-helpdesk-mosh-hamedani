@@ -42,6 +42,7 @@ model User {
   sessions Session[]
   accounts Account[]
   tickets  Ticket[]
+  replies  Reply[]
 
   @@map("user")
 }
@@ -106,9 +107,24 @@ model Ticket {
   agent     User?           @relation(fields: [agentId], references: [id], onDelete: SetNull)
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
+  replies   Reply[]
 
   @@index([status])
   @@index([agentId])
   @@map("ticket")
+}
+
+model Reply {
+  id        String   @id @default(cuid())
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorId  String?
+  author    User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  fromEmail String?
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([ticketId])
+  @@map("reply")
 }
 

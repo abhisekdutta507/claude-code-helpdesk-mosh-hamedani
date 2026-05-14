@@ -72,3 +72,9 @@ export const ticketQuerySchema = z.object({
 });
 
 export type TicketQueryParams = z.infer<typeof ticketQuerySchema>;
+
+export const createReplySchema = z.object({
+  body: z.string().min(1),
+});
+
+export type CreateReplyInput = z.infer<typeof createReplySchema>;
