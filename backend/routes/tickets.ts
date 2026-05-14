@@ -25,6 +25,35 @@ function dateRangeToFilter(dateRange: TicketDateRange): Prisma.TicketWhereInput 
 }
 
 export function registerTicketsRoutes(router: Router) {
+  router.get("/tickets/:id", async (req, res) => {
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: req.params.id },
+      select: {
+        id: true,
+        fromEmail: true,
+        toEmail: true,
+        subject: true,
+        body: true,
+        bodyHtml: true,
+        status: true,
+        category: true,
+        summary: true,
+        createdAt: true,
+        updatedAt: true,
+        agent: {
+          select: { id: true, name: true },
+        },
+      },
+    });
+
+    if (!ticket) {
+      res.status(404).json({ error: "Ticket not found" });
+      return;
+    }
+
+    res.set("Cache-Control", "no-cache").json(ticket);
+  });
+
   router.get("/tickets", async (req, res) => {
     const result = ticketQuerySchema.safeParse(req.query);
     if (!result.success) {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -136,7 +136,14 @@ const columns: ColumnDef<Ticket>[] = [
         Subject <SortIcon sorted={column.getIsSorted()} />
       </button>
     ),
-    cell: ({ row }) => <span className="font-medium max-w-xs truncate block">{row.original.subject}</span>,
+    cell: ({ row }) => (
+      <Link
+        to={`/tickets/${row.original.id}`}
+        className="font-medium max-w-xs truncate block hover:underline"
+      >
+        {row.original.subject}
+      </Link>
+    ),
   },
   {
     accessorKey: 'fromEmail',
