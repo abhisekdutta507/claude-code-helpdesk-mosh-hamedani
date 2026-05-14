@@ -58,6 +58,8 @@ export type TicketDateRange = (typeof TicketDateRange)[keyof typeof TicketDateRa
 
 const dateRangeValues = Object.values(TicketDateRange) as [TicketDateRange, ...TicketDateRange[]];
 
+export const PAGE_SIZE = 10;
+
 export const ticketQuerySchema = z.object({
   sortBy: z.enum(sortByValues).optional().default(TicketSortBy.CREATED_AT),
   sortDir: z.enum(sortDirValues).optional().default(TicketSortDir.DESC),
@@ -66,6 +68,7 @@ export const ticketQuerySchema = z.object({
   agentId: z.string().optional(),
   dateRange: z.enum(dateRangeValues).optional().default(TicketDateRange.ALL_TIME),
   search: z.string().optional(),
+  page: z.coerce.number().int().min(1).optional().default(1),
 });
 
 export type TicketQueryParams = z.infer<typeof ticketQuerySchema>;

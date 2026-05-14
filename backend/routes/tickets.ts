@@ -2,7 +2,7 @@ import type { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../db";
 import type { Prisma } from "../generated/prisma/client";
-import { ticketQuerySchema, TicketDateRange } from "@repo/shared/schemas/ticket";
+import { ticketQuerySchema, TicketDateRange, PAGE_SIZE } from "@repo/shared/schemas/ticket";
 
 function dateRangeToFilter(dateRange: TicketDateRange): Prisma.TicketWhereInput {
   const now = new Date();
@@ -32,40 +32,44 @@ export function registerTicketsRoutes(router: Router) {
       return;
     }
 
-    const { sortBy, sortDir, status, category, agentId, dateRange, search } = result.data;
+    const { sortBy, sortDir, status, category, agentId, dateRange, search, page } = result.data;
 
-    const where: Prisma.TicketWhereInput = {
-      ...(status ? { status } : {}),
-      ...(category ? { category } : {}),
-      ...(agentId === "unassigned" ? { agentId: null } : agentId ? { agentId } : {}),
-      ...dateRangeToFilter(dateRange),
-      ...(search
-        ? {
-            OR: [
-              { subject: { contains: search, mode: "insensitive" } },
-              { fromEmail: { contains: search, mode: "insensitive" } },
-            ],
-          }
-        : {}),
-    };
+    const where: Prisma.TicketWhereInput = {};
 
-    const tickets = await prisma.ticket.findMany({
-      where,
-      orderBy: { [sortBy]: sortDir } as Prisma.TicketOrderByWithRelationInput,
-      select: {
-        id: true,
-        fromEmail: true,
-        subject: true,
-        status: true,
-        category: true,
-        summary: true,
-        createdAt: true,
-        agent: {
-          select: { id: true, name: true },
+    if (status) where.status = status;
+    if (category) where.category = category;
+    if (agentId === "unassigned") where.agentId = null;
+    else if (agentId) where.agentId = agentId;
+    Object.assign(where, dateRangeToFilter(dateRange));
+    if (search) {
+      where.OR = [
+        { subject: { contains: search, mode: "insensitive" } },
+        { fromEmail: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    const [tickets, total] = await prisma.$transaction([
+      prisma.ticket.findMany({
+        where,
+        orderBy: { [sortBy]: sortDir } as Prisma.TicketOrderByWithRelationInput,
+        skip: (page - 1) * PAGE_SIZE,
+        take: PAGE_SIZE,
+        select: {
+          id: true,
+          fromEmail: true,
+          subject: true,
+          status: true,
+          category: true,
+          summary: true,
+          createdAt: true,
+          agent: {
+            select: { id: true, name: true },
+          },
         },
-      },
-    });
+      }),
+      prisma.ticket.count({ where }),
+    ]);
 
-    res.set("Cache-Control", "no-cache").json(tickets);
+    res.set("Cache-Control", "no-cache").json({ tickets, total, page, pageSize: PAGE_SIZE });
   });
 }
