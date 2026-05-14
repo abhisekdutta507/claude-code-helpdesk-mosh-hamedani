@@ -355,7 +355,7 @@ test.describe('view ticket detail', () => {
 
     await page.goto(`/tickets/${ticket.ticketId}`);
 
-    await expect(page.getByText('OPEN')).toBeVisible();
+    await expect(page.getByLabel('Ticket status')).toHaveValue('OPEN');
   });
 
   test('detail page shows the from email address', async ({ page, request }) => {
