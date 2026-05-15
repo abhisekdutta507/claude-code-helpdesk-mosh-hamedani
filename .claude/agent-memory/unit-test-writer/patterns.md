@@ -64,3 +64,11 @@ After a successful mutation, `queryClient.invalidateQueries({ queryKey: ['users'
 ## renderWithProviders
 
 Located at `@/test/render-utils`. Wraps in `QueryClientProvider` (retry: false) + `MemoryRouter`. Always use this, never bare `render`.
+
+## import.meta.env / VITE_API_URL — cannot be overridden at test runtime
+
+Vite statically inlines `import.meta.env.VITE_*` values at transform time. `vi.stubEnv` sets runtime env but does NOT affect the compiled constant — the `??` fallback in `const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000'` is dead code when `.env.test` sets the var.
+
+**What to test instead:** assert the URL built by the module matches the value in `.env.test` (i.e., `http://localhost:3001/api/...`). Do NOT try to test the fallback branch via `vi.stubEnv` + `vi.resetModules` — it does not work.
+
+The `.env.test` in `frontend/` sets `VITE_API_URL=http://localhost:3001`.
