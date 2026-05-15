@@ -31,7 +31,7 @@ export default function CreateUserDialog({ open, onOpenChange }: Props) {
     handleSubmit,
     setError,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<CreateUserFormData>({
     resolver: zodResolver(createUserSchema),
   });
@@ -106,8 +106,8 @@ export default function CreateUserDialog({ open, onOpenChange }: Props) {
             <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating…' : 'Create agent'}
+            <Button type="submit" disabled={mutation.isPending}>
+              {mutation.isPending ? 'Creating…' : 'Create agent'}
             </Button>
           </div>
         </form>
