@@ -147,10 +147,11 @@ test.describe('inbound email — deduplication', () => {
   test('second POST with same from and subject within 5 minutes returns duplicate:true with same ticketId', async ({ request }) => {
     const from = `user.dedup.${Date.now()}@example.com`;
     const subject = 'Duplicate test subject';
+    const body = 'Retry body.';
 
     // First request — creates the ticket
     const firstRes = await request.post(ENDPOINT, {
-      multipart: { from, subject, text: 'First send.' },
+      multipart: { from, subject, text: body },
     });
     expect(firstRes.status()).toBe(200);
     const firstBody = await firstRes.json() as { ok: boolean; ticketId: string; duplicate?: boolean };
@@ -158,9 +159,9 @@ test.describe('inbound email — deduplication', () => {
     expect(firstBody.ticketId).toBeTruthy();
     expect(firstBody.duplicate).toBeUndefined();
 
-    // Second request — same from + subject, should deduplicate
+    // Second request — same from + subject + body, should deduplicate
     const secondRes = await request.post(ENDPOINT, {
-      multipart: { from, subject, text: 'Retry send.' },
+      multipart: { from, subject, text: body },
     });
     expect(secondRes.status()).toBe(200);
     const secondBody = await secondRes.json() as { ok: boolean; ticketId: string; duplicate: boolean };
