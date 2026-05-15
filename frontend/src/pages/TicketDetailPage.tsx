@@ -1,145 +1,31 @@
-import { useState, useRef, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import axios from 'axios';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Send } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import NavBar from '@/components/NavBar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
-import { TicketStatus, TicketCategory } from '@repo/shared/schemas/ticket';
-
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
-
-type TicketDetail = {
-  id: string;
-  fromEmail: string;
-  toEmail: string | null;
-  subject: string;
-  body: string;
-  bodyHtml: string | null;
-  status: (typeof TicketStatus)[keyof typeof TicketStatus];
-  category: (typeof TicketCategory)[keyof typeof TicketCategory] | null;
-  summary: string | null;
-  createdAt: string;
-  updatedAt: string;
-  agent: { id: string; name: string } | null;
-};
-
-type Reply = {
-  id: string;
-  body: string;
-  createdAt: string;
-  fromEmail: string | null;
-  author: { id: string; name: string } | null;
-};
-
-const categoryLabel: Record<string, string> = {
-  [TicketCategory.GENERAL_QUESTION]: 'General',
-  [TicketCategory.TECHNICAL_QUESTION]: 'Technical',
-  [TicketCategory.REFUND_REQUEST]: 'Refund',
-};
-
-type Agent = { id: string; name: string };
-
-async function fetchTicket(id: string): Promise<TicketDetail> {
-  const res = await axios.get<TicketDetail>(`${API_URL}/api/tickets/${id}`, {
-    withCredentials: true,
-  });
-  return res.data;
-}
-
-async function fetchAgents(): Promise<Agent[]> {
-  const res = await axios.get<Agent[]>(`${API_URL}/api/agents`, { withCredentials: true });
-  return res.data;
-}
-
-async function fetchReplies(ticketId: string): Promise<Reply[]> {
-  const res = await axios.get<Reply[]>(`${API_URL}/api/tickets/${ticketId}/replies`, {
-    withCredentials: true,
-  });
-  return res.data;
-}
-
-async function assignAgent(ticketId: string, agentId: string | null): Promise<void> {
-  await axios.patch(`${API_URL}/api/tickets/${ticketId}/agent`, { agentId }, { withCredentials: true });
-}
-
-async function updateTicket(ticketId: string, data: { status?: string; category?: string | null }): Promise<void> {
-  await axios.patch(`${API_URL}/api/tickets/${ticketId}`, data, { withCredentials: true });
-}
-
-async function postReply(ticketId: string, body: string): Promise<Reply> {
-  const res = await axios.post<Reply>(
-    `${API_URL}/api/tickets/${ticketId}/replies`,
-    { body },
-    { withCredentials: true },
-  );
-  return res.data;
-}
+import { useTicketDetail } from '@/hooks/useTicketDetail';
+import { TicketMetaCard } from './TicketMetaCard';
+import { TicketSummaryCard } from './TicketSummaryCard';
+import { TicketMessageCard } from './TicketMessageCard';
+import { TicketRepliesCard } from './TicketRepliesCard';
 
 export default function TicketDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const queryClient = useQueryClient();
-  const [replyText, setReplyText] = useState('');
-  const threadEndRef = useRef<HTMLDivElement>(null);
-
-  const { data: ticket, isPending, isError } = useQuery({
-    queryKey: ['ticket', id],
-    queryFn: () => fetchTicket(id!),
-    enabled: !!id,
-    staleTime: 60_000,
-  });
-
-  const { data: agents = [] } = useQuery({
-    queryKey: ['agents'],
-    queryFn: fetchAgents,
-    staleTime: 5 * 60_000,
-  });
-
-  const { data: replies = [], isPending: repliesPending } = useQuery({
-    queryKey: ['replies', id],
-    queryFn: () => fetchReplies(id!),
-    enabled: !!id,
-    staleTime: 30_000,
-  });
-
-  const { mutate: assign, isPending: isAssigning } = useMutation({
-    mutationFn: (agentId: string | null) => assignAgent(id!, agentId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ticket', id] });
-      queryClient.invalidateQueries({ queryKey: ['tickets'] });
-    },
-  });
-
-  const { mutate: update, isPending: isUpdating } = useMutation({
-    mutationFn: (data: { status?: string; category?: string | null }) => updateTicket(id!, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ticket', id] });
-      queryClient.invalidateQueries({ queryKey: ['tickets'] });
-    },
-  });
-
-  const { mutate: submitReply, isPending: isSubmitting } = useMutation({
-    mutationFn: (body: string) => postReply(id!, body),
-    onSuccess: () => {
-      setReplyText('');
-      queryClient.invalidateQueries({ queryKey: ['replies', id] });
-    },
-  });
-
-  useEffect(() => {
-    if (!repliesPending) {
-      threadEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-  }, [replies.length, repliesPending]);
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const trimmed = replyText.trim();
-    if (!trimmed) return;
-    submitReply(trimmed);
-  }
+  const {
+    ticket,
+    isPending,
+    isError,
+    agents,
+    replies,
+    repliesPending,
+    isAssigning,
+    isUpdating,
+    isSubmitting,
+    replyText,
+    setReplyText,
+    threadEndRef,
+    assign,
+    update,
+    handleSubmit,
+  } = useTicketDetail(id);
 
   return (
     <div className="min-h-screen bg-background">
@@ -159,187 +45,33 @@ export default function TicketDetailPage() {
 
         {!isError && (
           <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-xl leading-snug">
-                  {isPending ? <Skeleton className="h-6 w-96" /> : ticket!.subject}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
-                  <div>
-                    <dt className="mb-1 font-medium text-muted-foreground">From</dt>
-                    <dd>{isPending ? <Skeleton className="h-4 w-48" /> : ticket!.fromEmail}</dd>
-                  </div>
-                  <div>
-                    <dt className="mb-1 font-medium text-muted-foreground">Created</dt>
-                    <dd>
-                      {isPending ? (
-                        <Skeleton className="h-4 w-40" />
-                      ) : (
-                        new Date(ticket!.createdAt).toLocaleString()
-                      )}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="mb-1 font-medium text-muted-foreground">Status</dt>
-                    <dd>
-                      {isPending ? (
-                        <Skeleton className="h-9 w-36" />
-                      ) : (
-                        <select
-                          className="h-9 w-48 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
-                          value={ticket!.status}
-                          disabled={isUpdating}
-                          onChange={(e) => update({ status: e.target.value })}
-                          aria-label="Ticket status"
-                        >
-                          {Object.values(TicketStatus).map((s) => (
-                            <option key={s} value={s}>{s}</option>
-                          ))}
-                        </select>
-                      )}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="mb-1 font-medium text-muted-foreground">Category</dt>
-                    <dd>
-                      {isPending ? (
-                        <Skeleton className="h-9 w-36" />
-                      ) : (
-                        <select
-                          className="h-9 w-48 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
-                          value={ticket!.category ?? ''}
-                          disabled={isUpdating}
-                          onChange={(e) => update({ category: e.target.value === '' ? null : e.target.value })}
-                          aria-label="Ticket category"
-                        >
-                          <option value="">Uncategorised</option>
-                          {Object.entries(categoryLabel).map(([value, label]) => (
-                            <option key={value} value={value}>{label}</option>
-                          ))}
-                        </select>
-                      )}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="mb-1 font-medium text-muted-foreground">Assigned agent</dt>
-                    <dd>
-                      {isPending ? (
-                        <Skeleton className="h-9 w-36" />
-                      ) : (
-                        <select
-                          className="h-9 w-48 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
-                          value={ticket!.agent?.id ?? ''}
-                          disabled={isAssigning}
-                          onChange={(e) => assign(e.target.value === '' ? null : e.target.value)}
-                          aria-label="Assign agent"
-                        >
-                          <option value="">Unassigned</option>
-                          {agents.map((a) => (
-                            <option key={a.id} value={a.id}>{a.name}</option>
-                          ))}
-                        </select>
-                      )}
-                    </dd>
-                  </div>
-                </dl>
-              </CardContent>
-            </Card>
-
-            {(isPending || ticket!.summary) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">AI Summary</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {isPending ? (
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-5/6" />
-                      <Skeleton className="h-4 w-4/6" />
-                    </div>
-                  ) : (
-                    <p className="text-sm leading-relaxed">{ticket!.summary}</p>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Message</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isPending ? (
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-3/4" />
-                  </div>
-                ) : ticket!.bodyHtml ? (
-                  <div
-                    className="prose prose-sm max-w-none text-sm"
-                    dangerouslySetInnerHTML={{ __html: ticket!.bodyHtml }}
-                  />
-                ) : (
-                  <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">{ticket!.body}</pre>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">
-                  Replies{!repliesPending && replies.length > 0 && (
-                    <span className="ml-2 text-sm font-normal text-muted-foreground">({replies.length})</span>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {repliesPending ? (
-                  <div className="space-y-3">
-                    <Skeleton className="h-16 w-full" />
-                    <Skeleton className="h-16 w-full" />
-                  </div>
-                ) : replies.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No replies yet.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {replies.map((reply) => (
-                      <div key={reply.id} className="rounded-lg border bg-muted/30 px-4 py-3">
-                        <div className="mb-1.5 flex items-center gap-2 text-xs text-muted-foreground">
-                          <span className="font-medium text-foreground">
-                            {reply.author ? reply.author.name : (reply.fromEmail ?? 'Customer')}
-                          </span>
-                          <span>·</span>
-                          <span>{new Date(reply.createdAt).toLocaleString()}</span>
-                        </div>
-                        <p className="whitespace-pre-wrap text-sm leading-relaxed">{reply.body}</p>
-                      </div>
-                    ))}
-                    <div ref={threadEndRef} />
-                  </div>
-                )}
-
-                <form onSubmit={handleSubmit} className="mt-4 space-y-2">
-                  <textarea
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
-                    rows={4}
-                    placeholder="Write a reply..."
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    disabled={isSubmitting}
-                  />
-                  <div className="flex justify-end">
-                    <Button type="submit" disabled={isSubmitting || !replyText.trim()} size="sm">
-                      <Send className="mr-1.5 h-3.5 w-3.5" />
-                      {isSubmitting ? 'Sending…' : 'Send reply'}
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
+            <TicketMetaCard
+              ticket={ticket}
+              agents={agents}
+              isPending={isPending}
+              isUpdating={isUpdating}
+              isAssigning={isAssigning}
+              onUpdate={update}
+              onAssign={assign}
+            />
+            <TicketSummaryCard
+              summary={ticket?.summary}
+              isPending={isPending}
+            />
+            <TicketMessageCard
+              body={ticket?.body}
+              bodyHtml={ticket?.bodyHtml}
+              isPending={isPending}
+            />
+            <TicketRepliesCard
+              replies={replies}
+              repliesPending={repliesPending}
+              isSubmitting={isSubmitting}
+              replyText={replyText}
+              threadEndRef={threadEndRef}
+              onReplyChange={setReplyText}
+              onSubmit={handleSubmit}
+            />
           </div>
         )}
       </main>

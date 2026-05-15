@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
 import NavBar from '@/components/NavBar';
 import CreateUserDialog from '@/components/CreateUserDialog';
@@ -18,16 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
-
-type User = {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  createdAt: string;
-};
+import { fetchUsers, type User } from '@/api/users';
 
 const DialogMode = {
   NONE: 'none',
@@ -42,11 +32,6 @@ type DialogState =
   | { mode: typeof DialogMode.CREATE }
   | { mode: typeof DialogMode.EDIT; user: User }
   | { mode: typeof DialogMode.DELETE; user: User };
-
-async function fetchUsers(): Promise<User[]> {
-  const res = await axios.get<User[]>(`${API_URL}/api/users`, { withCredentials: true });
-  return res.data;
-}
 
 const roleBadgeClass = {
   [UserRole.ADMIN]:
