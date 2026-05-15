@@ -17,10 +17,10 @@ export const TicketCategory = {
 export type TicketCategory = (typeof TicketCategory)[keyof typeof TicketCategory];
 
 export const inboundEmailSchema = z.object({
-  from: z.email(),
-  to: z.string().optional(),
-  subject: z.string().min(1),
-  body: z.string().min(1),
+  from: z.email().max(254),
+  to: z.string().max(254).optional(),
+  subject: z.string().min(1).max(254),
+  body: z.string().min(1).max(50_000),
 });
 
 export type InboundEmailInput = z.infer<typeof inboundEmailSchema>;
