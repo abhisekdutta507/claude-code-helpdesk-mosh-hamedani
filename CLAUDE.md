@@ -100,7 +100,7 @@ cp "frontend/@/components/ui/<component>.tsx" "frontend/src/components/ui/<compo
 
 ## Unit Testing Agent
 
-Use the `unit-test-writer` agent for all unit test work. Always run it with `run_in_background: true` so the user can continue working in VS Code while tests are being written.
+Use the `atomic` agent for all unit test work. Always run it with `run_in_background: true` so the user can continue working in VS Code while tests are being written.
 
 ## Unit Testing (Vitest + React Testing Library)
 
@@ -123,7 +123,7 @@ Test files live alongside source files as `*.test.tsx` / `*.test.ts` under `src/
 
 ## E2E Testing (Playwright)
 
-Use the `e2e-test-writer` agent for all Playwright test work. It has full context on the test infrastructure, auth setup, seeded users, and project conventions.
+Use the `playwright` agent for all Playwright test work. It has full context on the test infrastructure, auth setup, seeded users, and project conventions.
 
 Trigger it after implementing a new UI feature or API-backed workflow, or when explicitly asked to write tests.
 
