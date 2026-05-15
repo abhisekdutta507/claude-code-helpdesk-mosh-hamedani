@@ -8,6 +8,8 @@ import {
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
+export type Agent = { id: string; name: string };
+
 export type Ticket = {
   id: string;
   fromEmail: string;
@@ -16,7 +18,7 @@ export type Ticket = {
   category: (typeof TicketCategory)[keyof typeof TicketCategory] | null;
   summary: string | null;
   createdAt: string;
-  agent: { id: string; name: string } | null;
+  agent: Agent | null;
 };
 
 export type TicketsResponse = {
@@ -38,7 +40,7 @@ export type TicketDetail = {
   summary: string | null;
   createdAt: string;
   updatedAt: string;
-  agent: { id: string; name: string } | null;
+  agent: Agent | null;
 };
 
 export type Reply = {
@@ -46,10 +48,8 @@ export type Reply = {
   body: string;
   createdAt: string;
   fromEmail: string | null;
-  author: { id: string; name: string } | null;
+  author: Agent | null;
 };
-
-export type Agent = { id: string; name: string };
 
 export async function fetchTickets(
   sortBy: TicketSortByType,

@@ -7,12 +7,7 @@ import {
   assignAgent,
   updateTicket,
   postReply,
-  type TicketDetail,
-  type Reply,
-  type Agent,
 } from '@/api/tickets';
-
-export type { TicketDetail, Reply, Agent };
 
 export function useTicketDetail(id: string | undefined) {
   const queryClient = useQueryClient();

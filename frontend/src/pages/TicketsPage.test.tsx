@@ -3,6 +3,7 @@ import { screen, fireEvent, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import axios from 'axios';
 import { renderWithProviders } from '@/test/render-utils';
+import type { Ticket, TicketsResponse, Agent } from '@/api/tickets';
 import TicketsPage from './TicketsPage';
 
 vi.mock('axios');
@@ -14,22 +15,22 @@ vi.mock('@/components/NavBar', () => ({ default: () => <div data-testid="navbar"
 // Fixtures
 // ---------------------------------------------------------------------------
 
-const ticket = {
+const ticket: Ticket = {
   id: '1',
   fromEmail: 'a@b.com',
   subject: 'Test ticket subject',
-  status: 'OPEN' as const,
+  status: 'OPEN',
   category: null,
   summary: null,
   createdAt: new Date('2024-01-15T10:00:00Z').toISOString(),
   agent: null,
 };
 
-const ticketsResponse = { tickets: [ticket], total: 1, page: 1, pageSize: 10 };
-const emptyTicketsResponse = { tickets: [], total: 0, page: 1, pageSize: 10 };
+const ticketsResponse: TicketsResponse = { tickets: [ticket], total: 1, page: 1, pageSize: 10 };
+const emptyTicketsResponse: TicketsResponse = { tickets: [], total: 0, page: 1, pageSize: 10 };
 
 // Helper: set up both axios.get calls (tickets + agents)
-function mockGetSuccess(ticketsData = ticketsResponse, agents: { id: string; name: string }[] = []) {
+function mockGetSuccess(ticketsData: TicketsResponse = ticketsResponse, agents: Agent[] = []) {
   vi.mocked(axios.get).mockImplementation((url: string) => {
     if ((url as string).includes('/api/agents')) {
       return Promise.resolve({ data: agents });

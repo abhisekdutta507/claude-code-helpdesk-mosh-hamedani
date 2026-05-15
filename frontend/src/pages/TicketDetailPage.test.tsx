@@ -2,6 +2,7 @@ import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import axios from 'axios';
 import { renderWithProviders } from '@/test/render-utils';
+import type { TicketDetail, Reply, Agent } from '@/api/tickets';
 import TicketDetailPage from './TicketDetailPage';
 
 vi.mock('axios');
@@ -19,7 +20,7 @@ vi.mock('react-router-dom', async (importOriginal) => {
   };
 });
 
-const ticket = {
+const ticket: TicketDetail = {
   id: 'ticket-1',
   fromEmail: 'customer@example.com',
   toEmail: null,
@@ -34,7 +35,7 @@ const ticket = {
   agent: null,
 };
 
-const agentReply = {
+const agentReply: Reply = {
   id: 'r1',
   body: 'We are looking into it',
   fromEmail: null,
@@ -42,7 +43,7 @@ const agentReply = {
   author: { id: 'u1', name: 'Agent Alice' },
 };
 
-const customerReply = {
+const customerReply: Reply = {
   id: 'r2',
   body: 'Any update?',
   fromEmail: 'customer@example.com',
@@ -50,7 +51,7 @@ const customerReply = {
   author: null,
 };
 
-const mockAgents = [
+const mockAgents: Agent[] = [
   { id: 'agent-1', name: 'Agent Alice' },
   { id: 'agent-2', name: 'Agent Bob' },
 ];

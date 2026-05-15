@@ -19,6 +19,7 @@ Use `bun` for everything. Never use npm, yarn, or pnpm. In non-interactive shell
 - No `any` types; strict TypeScript throughout
 - Always use semicolons in all TypeScript/TSX files
 - `.env` files only — no dotenv package needed (Bun loads them automatically)
+- Ticket-related types (`Agent`, `Ticket`, `TicketsResponse`, `TicketDetail`, `Reply`) are canonical in `frontend/src/api/tickets.ts` — never duplicate or re-declare them elsewhere; always import from there. Test fixtures must be annotated with these types.
 
 ## Local Dev Setup
 
