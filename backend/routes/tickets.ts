@@ -152,16 +152,47 @@ export function registerTicketsRoutes(router: Router) {
       return;
     }
 
-    const ticket = await prisma.ticket.findUnique({ where: { id: req.params.id }, select: { id: true } });
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: req.params.id },
+      select: {
+        subject: true,
+        body: true,
+        replies: {
+          orderBy: { createdAt: "asc" },
+          select: {
+            body: true,
+            fromEmail: true,
+            author: { select: { name: true } },
+          },
+        },
+      },
+    });
     if (!ticket) {
       res.status(404).json({ error: "Ticket not found" });
       return;
     }
 
+    const conversation = ticket.replies
+      .map((r) => {
+        const sender = r.author ? r.author.name : (r.fromEmail ?? "Customer");
+        return `${sender}:\n${r.body}`;
+      })
+      .join("\n\n---\n\n");
+
+    const prompt = `Subject: ${ticket.subject}
+
+Original message:
+${ticket.body}${conversation ? `\n\n---\n\nConversation so far:\n\n${conversation}` : ""}
+
+---
+
+Draft reply to improve:
+${result.data.body}`;
+
     const { text } = await generateText({
       model: ollama("llama3.2"),
-      system: "You are a helpful support agent. Improve the reply below: fix grammar, improve clarity and tone. Return only the improved text, no preamble.",
-      prompt: result.data.body,
+      system: "You are a helpful customer support agent. You will be given a support ticket subject, the original message, the conversation so far, and a draft reply. Improve the draft reply: fix grammar, improve clarity and tone, and make sure it is relevant to the ticket context. Return only the improved reply text, no preamble or explanation.",
+      prompt,
     });
 
     res.json({ polished: text });
