@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -23,7 +24,7 @@ export function TicketMessageCard({ body, bodyHtml, isPending }: Props) {
         ) : bodyHtml ? (
           <div
             className="prose prose-sm max-w-none text-sm"
-            dangerouslySetInnerHTML={{ __html: bodyHtml }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bodyHtml) }}
           />
         ) : (
           <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed">{body}</pre>
