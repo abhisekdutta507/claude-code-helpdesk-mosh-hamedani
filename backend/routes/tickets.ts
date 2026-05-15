@@ -1,8 +1,12 @@
 import type { Router } from "express";
 import { z } from "zod";
+import { generateText } from "ai";
+import { createOpenAI } from "@ai-sdk/openai";
 import { prisma } from "../db";
 import type { Prisma } from "../generated/prisma/client";
 import { ticketQuerySchema, TicketDateRange, PAGE_SIZE, TicketStatus, TicketCategory, createReplySchema } from "@repo/shared/schemas/ticket";
+
+const ollama = createOpenAI({ baseURL: "http://localhost:11434/v1", apiKey: "ollama" });
 
 function dateRangeToFilter(dateRange: TicketDateRange): Prisma.TicketWhereInput {
   const now = new Date();
@@ -137,6 +141,30 @@ export function registerTicketsRoutes(router: Router) {
     });
 
     res.set("Cache-Control", "no-cache").json(replies);
+  });
+
+  const polishReplySchema = z.object({ body: z.string().min(1) });
+
+  router.post("/tickets/:id/polish-reply", async (req, res) => {
+    const result = polishReplySchema.safeParse(req.body);
+    if (!result.success) {
+      res.status(400).json({ error: "Invalid request body", details: z.flattenError(result.error).fieldErrors });
+      return;
+    }
+
+    const ticket = await prisma.ticket.findUnique({ where: { id: req.params.id }, select: { id: true } });
+    if (!ticket) {
+      res.status(404).json({ error: "Ticket not found" });
+      return;
+    }
+
+    const { text } = await generateText({
+      model: ollama("llama3.2"),
+      system: "You are a helpful support agent. Improve the reply below: fix grammar, improve clarity and tone. Return only the improved text, no preamble.",
+      prompt: result.data.body,
+    });
+
+    res.json({ polished: text });
   });
 
   router.post("/tickets/:id/replies", async (req, res) => {

@@ -114,3 +114,12 @@ export async function postReply(ticketId: string, body: string): Promise<Reply> 
   );
   return res.data;
 }
+
+export async function polishReply(ticketId: string, body: string): Promise<string> {
+  const res = await axios.post<{ polished: string }>(
+    `${API_URL}/api/tickets/${ticketId}/polish-reply`,
+    { body },
+    { withCredentials: true },
+  );
+  return res.data.polished;
+}
