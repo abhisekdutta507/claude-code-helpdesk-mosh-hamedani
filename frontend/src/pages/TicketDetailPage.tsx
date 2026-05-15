@@ -25,6 +25,11 @@ export default function TicketDetailPage() {
     assign,
     update,
     handleSubmit,
+    isPolishing,
+    polishedText,
+    handlePolish,
+    acceptPolished,
+    discardPolished,
   } = useTicketDetail(id);
 
   return (
@@ -67,10 +72,15 @@ export default function TicketDetailPage() {
               replies={replies}
               repliesPending={repliesPending}
               isSubmitting={isSubmitting}
+              isPolishing={isPolishing}
               replyText={replyText}
+              polishedText={polishedText}
               threadEndRef={threadEndRef}
               onReplyChange={setReplyText}
               onSubmit={handleSubmit}
+              onPolish={handlePolish}
+              onAcceptPolished={acceptPolished}
+              onDiscardPolished={discardPolished}
             />
           </div>
         )}

@@ -1,8 +1,12 @@
 import type { Router } from "express";
 import { z } from "zod";
+import { generateText } from "ai";
+import { createOpenAI } from "@ai-sdk/openai";
 import { prisma } from "../db";
 import type { Prisma } from "../generated/prisma/client";
 import { ticketQuerySchema, TicketDateRange, PAGE_SIZE, TicketStatus, TicketCategory, createReplySchema } from "@repo/shared/schemas/ticket";
+
+const ollama = createOpenAI({ baseURL: "http://localhost:11434/v1", apiKey: "ollama" });
 
 function dateRangeToFilter(dateRange: TicketDateRange): Prisma.TicketWhereInput {
   const now = new Date();
@@ -137,6 +141,61 @@ export function registerTicketsRoutes(router: Router) {
     });
 
     res.set("Cache-Control", "no-cache").json(replies);
+  });
+
+  const polishReplySchema = z.object({ body: z.string().min(1) });
+
+  router.post("/tickets/:id/polish-reply", async (req, res) => {
+    const result = polishReplySchema.safeParse(req.body);
+    if (!result.success) {
+      res.status(400).json({ error: "Invalid request body", details: z.flattenError(result.error).fieldErrors });
+      return;
+    }
+
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: req.params.id },
+      select: {
+        subject: true,
+        body: true,
+        replies: {
+          orderBy: { createdAt: "asc" },
+          select: {
+            body: true,
+            fromEmail: true,
+            author: { select: { name: true } },
+          },
+        },
+      },
+    });
+    if (!ticket) {
+      res.status(404).json({ error: "Ticket not found" });
+      return;
+    }
+
+    const conversation = ticket.replies
+      .map((r) => {
+        const sender = r.author ? r.author.name : (r.fromEmail ?? "Customer");
+        return `${sender}:\n${r.body}`;
+      })
+      .join("\n\n---\n\n");
+
+    const prompt = `Subject: ${ticket.subject}
+
+Original message:
+${ticket.body}${conversation ? `\n\n---\n\nConversation so far:\n\n${conversation}` : ""}
+
+---
+
+Draft reply to improve:
+${result.data.body}`;
+
+    const { text } = await generateText({
+      model: ollama("llama3.2"),
+      system: "You are a helpful customer support agent. You will be given a support ticket subject, the original message, the conversation so far, and a draft reply. Improve the draft reply: fix grammar, improve clarity and tone, and make sure it is relevant to the ticket context. Return only the improved reply text, no preamble or explanation.",
+      prompt,
+    });
+
+    res.json({ polished: text });
   });
 
   router.post("/tickets/:id/replies", async (req, res) => {
