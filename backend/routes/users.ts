@@ -95,6 +95,7 @@ export function registerUsersRoutes(router: Router) {
     await prisma.$transaction([
       prisma.session.deleteMany({ where: { userId: id } }),
       prisma.account.deleteMany({ where: { userId: id } }),
+      prisma.ticket.updateMany({ where: { agentId: id }, data: { agentId: null } }),
       prisma.user.update({ where: { id }, data: { deletedAt: new Date() } }),
     ]);
 

@@ -38,6 +38,7 @@ const ticket: TicketDetail = {
 const agentReply: Reply = {
   id: 'r1',
   body: 'We are looking into it',
+  bodyHtml: null,
   fromEmail: null,
   createdAt: '2024-01-02T00:00:00.000Z',
   author: { id: 'u1', name: 'Agent Alice' },
@@ -46,6 +47,7 @@ const agentReply: Reply = {
 const customerReply: Reply = {
   id: 'r2',
   body: 'Any update?',
+  bodyHtml: null,
   fromEmail: 'customer@example.com',
   createdAt: '2024-01-03T00:00:00.000Z',
   author: null,
@@ -522,6 +524,62 @@ describe('TicketDetailPage', () => {
     });
   });
 
+  describe('reply HTML rendering', () => {
+    it('renders plain text body in a <p> element when bodyHtml is null', async () => {
+      vi.mocked(axios.get).mockImplementation((url: string) => {
+        if (url.includes('/api/tickets/ticket-1/replies')) {
+          return Promise.resolve({ data: [agentReply] });
+        }
+        if (url.includes('/api/agents')) {
+          return Promise.resolve({ data: mockAgents });
+        }
+        if (url.includes('/api/tickets/ticket-1')) {
+          return Promise.resolve({ data: ticket });
+        }
+        return Promise.reject(new Error(`Unexpected GET: ${url}`));
+      });
+
+      renderComponent();
+
+      await screen.findByText('We are looking into it');
+      const replyText = screen.getByText('We are looking into it');
+      expect(replyText.tagName).toBe('P');
+      expect(replyText.closest('.prose')).toBeNull();
+    });
+
+    it('renders HTML body in a prose div when bodyHtml is set', async () => {
+      const htmlReply: Reply = {
+        id: 'r4',
+        body: 'Reply with formatting',
+        bodyHtml: '<p>Reply with <strong>formatting</strong></p>',
+        fromEmail: null,
+        createdAt: '2024-01-05T00:00:00.000Z',
+        author: { id: 'u1', name: 'Agent Alice' },
+      };
+
+      vi.mocked(axios.get).mockImplementation((url: string) => {
+        if (url.includes('/api/tickets/ticket-1/replies')) {
+          return Promise.resolve({ data: [htmlReply] });
+        }
+        if (url.includes('/api/agents')) {
+          return Promise.resolve({ data: mockAgents });
+        }
+        if (url.includes('/api/tickets/ticket-1')) {
+          return Promise.resolve({ data: ticket });
+        }
+        return Promise.reject(new Error(`Unexpected GET: ${url}`));
+      });
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(document.querySelector('.prose')).toBeInTheDocument();
+      });
+      const prose = document.querySelector('.prose');
+      expect(prose?.innerHTML).toContain('<strong>formatting</strong>');
+    });
+  });
+
   describe('reply form', () => {
     it('renders the reply textarea and Send reply button', async () => {
       setupDefaultMocks();
@@ -565,7 +623,7 @@ describe('TicketDetailPage', () => {
 
     it('submitting the form calls POST /api/tickets/:id/replies with trimmed body', async () => {
       setupDefaultMocks();
-      vi.mocked(axios.post).mockResolvedValue({ data: { id: 'r3', body: 'Hello there', fromEmail: null, createdAt: '2024-01-04T00:00:00.000Z', author: { id: 'u1', name: 'Agent Alice' } } });
+      vi.mocked(axios.post).mockResolvedValue({ data: { id: 'r3', body: 'Hello there', bodyHtml: null, fromEmail: null, createdAt: '2024-01-04T00:00:00.000Z', author: { id: 'u1', name: 'Agent Alice' } } });
       renderComponent();
 
       await screen.findByText('No replies yet.');
@@ -590,6 +648,7 @@ describe('TicketDetailPage', () => {
         data: {
           id: 'r3',
           body: 'Hello there',
+          bodyHtml: null,
           fromEmail: null,
           createdAt: '2024-01-04T00:00:00.000Z',
           author: { id: 'u1', name: 'Agent Alice' },
@@ -644,6 +703,7 @@ describe('TicketDetailPage', () => {
         data: {
           id: 'r3',
           body: 'Hello there',
+          bodyHtml: null,
           fromEmail: null,
           createdAt: '2024-01-04T00:00:00.000Z',
           author: { id: 'u1', name: 'Agent Alice' },
