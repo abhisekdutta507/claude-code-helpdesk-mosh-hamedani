@@ -38,6 +38,9 @@ registerInboundRoutes(app);
 const apiRouter = Router();
 app.use("/api", requireAuth, apiRouter);
 
+registerUsersRoutes(apiRouter);
+registerTicketsRoutes(apiRouter);
+
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   console.error(err);
   res.status(500).json({ error: "Internal server error" });
@@ -46,8 +49,5 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
-
-registerUsersRoutes(apiRouter);
-registerTicketsRoutes(apiRouter);
 
 export { apiRouter };
