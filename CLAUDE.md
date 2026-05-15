@@ -19,6 +19,7 @@ Use `bun` for everything. Never use npm, yarn, or pnpm. In non-interactive shell
 - No `any` types; strict TypeScript throughout
 - Always use semicolons in all TypeScript/TSX files
 - `.env` files only — no dotenv package needed (Bun loads them automatically)
+- Ticket-related types (`Agent`, `Ticket`, `TicketsResponse`, `TicketDetail`, `Reply`) are canonical in `frontend/src/api/tickets.ts` — never duplicate or re-declare them elsewhere; always import from there. Test fixtures must be annotated with these types.
 
 ## Local Dev Setup
 
@@ -30,6 +31,8 @@ export $(grep -v '^#' .env | xargs) && bun run prisma migrate deploy
 ```
 
 `backend/seed.ts` is idempotent — creates users from `SEED_ADMIN_EMAIL`/`SEED_AGENT1_EMAIL` env vars.
+
+> **Hot reload caveat:** Bun's `--hot` flag silently fails to reload changed route files. **Always restart the backend server after any backend file change** — otherwise the old code keeps running and changes have no effect.
 
 ## Authentication
 
@@ -131,6 +134,10 @@ Tests use ports 3001 (backend) and 5174 (frontend) to avoid conflicting with dev
 ### Sign-out test isolation
 
 `authClient.signOut()` deletes the session row from the DB. Any test that calls sign-out **must** use `test.use({ storageState: { cookies: [], origins: [] } })` and log in fresh — sharing the pre-authed `admin.json` session would invalidate concurrent tests.
+
+## Auto-Memory vs CLAUDE.md
+
+Auto-memory files (`~/.claude/projects/.../memory/`) are machine-local and not checked in. Do not trim conventions from CLAUDE.md on the basis that they exist in memory — a new machine will have CLAUDE.md but not the memory files.
 
 ## Library Documentation
 

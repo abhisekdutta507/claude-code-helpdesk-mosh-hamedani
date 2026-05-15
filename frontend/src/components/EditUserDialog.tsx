@@ -7,6 +7,7 @@ import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { FormField } from '@/components/ui/FormField';
 import {
   Dialog,
   DialogContent,
@@ -15,55 +16,18 @@ import {
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
-import { updateUserSchema, UserRole } from '@repo/shared/schemas/user';
+import { updateUserSchema } from '@repo/shared/schemas/user';
+import { type User } from '@/api/users';
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
 type UpdateUserFormData = z.infer<typeof updateUserSchema>;
-
-type User = {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  createdAt: string;
-};
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   user: User | null;
 };
-
-type FormFieldProps = {
-  id: string;
-  label: string;
-  type?: string;
-  placeholder?: string;
-  autoComplete?: string;
-  error?: string;
-  name: string;
-  onBlur: React.FocusEventHandler<HTMLInputElement>;
-  onChange: React.ChangeEventHandler<HTMLInputElement>;
-  ref: React.Ref<HTMLInputElement>;
-};
-
-function FormField({ id, label, type = 'text', placeholder, autoComplete, error, ...registration }: FormFieldProps) {
-  return (
-    <div className="flex flex-col gap-2">
-      <Label htmlFor={id}>{label}</Label>
-      <Input
-        id={id}
-        type={type}
-        placeholder={placeholder}
-        autoComplete={autoComplete}
-        aria-invalid={!!error}
-        {...registration}
-      />
-      {error && <p className="text-sm text-destructive">{error}</p>}
-    </div>
-  );
-}
 
 export default function EditUserDialog({ open, onOpenChange, user }: Props) {
   const queryClient = useQueryClient();

@@ -3,6 +3,7 @@
 .env
 .DS_Store
 *.log
+*.tsbuildinfo
 
 # Playwright
 frontend/e2e/.auth/

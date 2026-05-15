@@ -6,6 +6,15 @@ import { z } from "zod";
 import { createUserSchema, updateUserSchema, UserRole } from "@repo/shared/schemas/user";
 
 export function registerUsersRoutes(router: Router) {
+  router.get("/agents", async (_req, res) => {
+    const agents = await prisma.user.findMany({
+      where: { deletedAt: null, role: UserRole.AGENT },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    });
+    res.json(agents);
+  });
+
   router.get("/users", requireAdmin, async (_req, res) => {
     const users = await prisma.user.findMany({
       where: { deletedAt: null },
@@ -86,6 +95,7 @@ export function registerUsersRoutes(router: Router) {
     await prisma.$transaction([
       prisma.session.deleteMany({ where: { userId: id } }),
       prisma.account.deleteMany({ where: { userId: id } }),
+      prisma.ticket.updateMany({ where: { agentId: id }, data: { agentId: null } }),
       prisma.user.update({ where: { id }, data: { deletedAt: new Date() } }),
     ]);
 

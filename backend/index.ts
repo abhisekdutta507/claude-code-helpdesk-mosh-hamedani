@@ -6,6 +6,9 @@ import { toNodeHandler } from "better-auth/node";
 import { auth } from "./auth";
 import { requireAuth } from "./middleware/requireAuth";
 import { authLimiter } from "./middleware/rateLimiter";
+import { registerInboundRoutes } from "./routes/inbound";
+import { registerUsersRoutes } from "./routes/users";
+import { registerTicketsRoutes } from "./routes/tickets";
 
 const app = express();
 const PORT = process.env.PORT ?? 3000;
@@ -28,9 +31,15 @@ app.get("/api/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
+// Public API routes — registered directly on app before requireAuth to bypass the auth guard
+registerInboundRoutes(app);
+
 // Protected routes — all routes mounted here require a valid session
 const apiRouter = Router();
 app.use("/api", requireAuth, apiRouter);
+
+registerUsersRoutes(apiRouter);
+registerTicketsRoutes(apiRouter);
 
 app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   console.error(err);
@@ -40,8 +49,5 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
-
-import { registerUsersRoutes } from "./routes/users";
-registerUsersRoutes(apiRouter);
 
 export { apiRouter };

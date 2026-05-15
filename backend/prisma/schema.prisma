@@ -14,6 +14,18 @@ enum UserRole {
   AGENT
 }
 
+enum TicketStatus {
+  OPEN
+  RESOLVED
+  CLOSED
+}
+
+enum TicketCategory {
+  GENERAL_QUESTION
+  TECHNICAL_QUESTION
+  REFUND_REQUEST
+}
+
 // ─── Better Auth core tables ──────────────────────────────────────────────────
 
 model User {
@@ -29,6 +41,8 @@ model User {
 
   sessions Session[]
   accounts Account[]
+  tickets  Ticket[]
+  replies  Reply[]
 
   @@map("user")
 }
@@ -77,5 +91,41 @@ model Verification {
   updatedAt  DateTime?
 
   @@map("verification")
+}
+
+model Ticket {
+  id        String          @id @default(cuid())
+  fromEmail String
+  toEmail   String?
+  subject   String
+  body      String
+  bodyHtml  String?
+  status    TicketStatus    @default(OPEN)
+  category  TicketCategory?
+  summary   String?
+  agentId   String?
+  agent     User?           @relation(fields: [agentId], references: [id], onDelete: SetNull)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  replies   Reply[]
+
+  @@index([status])
+  @@index([agentId])
+  @@map("ticket")
+}
+
+model Reply {
+  id        String   @id @default(cuid())
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorId  String?
+  author    User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  fromEmail String?
+  body      String
+  bodyHtml  String?
+  createdAt DateTime @default(now())
+
+  @@index([ticketId])
+  @@map("reply")
 }
 

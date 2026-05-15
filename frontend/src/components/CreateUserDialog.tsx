@@ -4,8 +4,7 @@ import { z } from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { FormField } from '@/components/ui/FormField';
 import {
   Dialog,
   DialogContent,
@@ -25,32 +24,6 @@ type Props = {
   onOpenChange: (open: boolean) => void;
 };
 
-type FormFieldProps = {
-  id: keyof CreateUserFormData;
-  label: string;
-  type?: string;
-  placeholder?: string;
-  autoComplete?: string;
-  error?: string;
-} & ReturnType<ReturnType<typeof useForm<CreateUserFormData>>['register']>;
-
-function FormField({ id, label, type = 'text', placeholder, autoComplete, error, ...registration }: FormFieldProps) {
-  return (
-    <div className="flex flex-col gap-2">
-      <Label htmlFor={id}>{label}</Label>
-      <Input
-        id={id}
-        type={type}
-        placeholder={placeholder}
-        autoComplete={autoComplete}
-        aria-invalid={!!error}
-        {...registration}
-      />
-      {error && <p className="text-sm text-destructive">{error}</p>}
-    </div>
-  );
-}
-
 export default function CreateUserDialog({ open, onOpenChange }: Props) {
   const queryClient = useQueryClient();
   const {
@@ -58,7 +31,7 @@ export default function CreateUserDialog({ open, onOpenChange }: Props) {
     handleSubmit,
     setError,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<CreateUserFormData>({
     resolver: zodResolver(createUserSchema),
   });
@@ -133,8 +106,8 @@ export default function CreateUserDialog({ open, onOpenChange }: Props) {
             <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating…' : 'Create agent'}
+            <Button type="submit" disabled={mutation.isPending}>
+              {mutation.isPending ? 'Creating…' : 'Create agent'}
             </Button>
           </div>
         </form>

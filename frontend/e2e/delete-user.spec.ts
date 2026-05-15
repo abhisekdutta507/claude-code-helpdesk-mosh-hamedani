@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { testUsers } from './test-credentials';
+import { testUsers, apiBaseUrl } from './test-credentials';
 import { login } from './helpers';
 
 // All delete-user tests require an admin session. We rely on the project-level
@@ -15,7 +15,7 @@ import { login } from './helpers';
 // Helpers
 // ---------------------------------------------------------------------------
 
-const API_URL = 'http://localhost:3001';
+const API_URL = apiBaseUrl;
 
 /** Navigate to /users and wait for the table to finish loading. */
 async function gotoUsers(page: import('@playwright/test').Page) {

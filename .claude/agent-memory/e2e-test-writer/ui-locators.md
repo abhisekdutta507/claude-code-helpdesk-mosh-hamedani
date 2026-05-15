@@ -35,6 +35,24 @@ Example in LoginPage: `<CardTitle>Helpdesk</CardTitle>` → use `page.getByText(
 - Edit button per row: `aria-label="Edit user"` + `data-testid="edit-user-${user.id}"` — use `getByRole('button', { name: 'Edit user' })` scoped to the row
 - Row targeting: `page.getByRole('row').filter({ has: page.getByRole('cell', { name: email }) })`
 
+## TicketsPage (`/tickets`)
+
+- Page ready: wait for `page.getByText(/\d+ tickets?/)` — CardTitle (div) shows "N tickets" (NOT "All tickets (N)")
+- Filter dropdowns: `getByRole('combobox', { name: 'Filter by status' })`, `'Filter by category'`, `'Filter by agent'`
+- Search input: `page.getByPlaceholder('Search subject or email…')`
+- Clear filters button: `page.getByRole('button', { name: 'Clear filters' })` — only visible when a filter is active
+- Pagination: renders as `button` role (NOT `link`). Use `getByRole('button', { name: 'Go to previous page' })` and `'Go to next page'`. Disabled via HTML `disabled` attribute when at boundary.
+- Ticket subject cell: `page.getByRole('link', { name: subjectText })` — subject is an `<a>` tag linking to `/tickets/:id`
+
+## TicketDetailPage (`/tickets/:id`)
+
+- Card title (subject): `page.locator('[data-slot="card-title"]').first()` — use `.toHaveText(subject)` not `getByText` (subject also appears in message body)
+- Status badge: `page.getByText('OPEN')` / `'RESOLVED'` / `'CLOSED'` — inline span with badge classes
+- Assign agent dropdown: `page.getByRole('combobox', { name: 'Assign agent' })` — disabled while mutation in-flight
+- Back link: `page.getByRole('link', { name: /Back to tickets/ })`
+- AI Summary card: only renders when `ticket.summary` is truthy — absent for webhook-created tickets in test mode
+- Error state: `page.getByText('Failed to load ticket.')` — shows when API returns 404
+
 ## EditUserDialog
 
 - Dialog: `page.getByRole('dialog')` — Radix Dialog has `role="dialog"`
