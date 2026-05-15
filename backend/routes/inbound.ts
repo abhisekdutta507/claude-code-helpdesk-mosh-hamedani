@@ -96,6 +96,7 @@ export function registerInboundRoutes(router: Router): void {
             ticketId: parentTicket.id,
             fromEmail: result.data.from,
             body: result.data.body,
+            bodyHtml: html ?? null,
           },
         });
         res.status(200).json({ ok: true, ticketId: parentTicket.id, reply: true });

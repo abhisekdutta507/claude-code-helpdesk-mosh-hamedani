@@ -122,6 +122,7 @@ model Reply {
   author    User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
   fromEmail String?
   body      String
+  bodyHtml  String?
   createdAt DateTime @default(now())
 
   @@index([ticketId])

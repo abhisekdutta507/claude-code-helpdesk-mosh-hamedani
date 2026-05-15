@@ -129,6 +129,7 @@ export function registerTicketsRoutes(router: Router) {
       select: {
         id: true,
         body: true,
+        bodyHtml: true,
         fromEmail: true,
         createdAt: true,
         author: { select: { id: true, name: true } },
@@ -160,6 +161,7 @@ export function registerTicketsRoutes(router: Router) {
       select: {
         id: true,
         body: true,
+        bodyHtml: true,
         fromEmail: true,
         createdAt: true,
         author: { select: { id: true, name: true } },

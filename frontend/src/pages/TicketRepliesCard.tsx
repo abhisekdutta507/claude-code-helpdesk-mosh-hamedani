@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify';
 import { Send } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -51,7 +52,14 @@ export function TicketRepliesCard({
                   <span>·</span>
                   <span>{new Date(reply.createdAt).toLocaleString()}</span>
                 </div>
-                <p className="whitespace-pre-wrap text-sm leading-relaxed">{reply.body}</p>
+                {reply.bodyHtml ? (
+                  <div
+                    className="prose prose-sm max-w-none text-sm"
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(reply.bodyHtml) }}
+                  />
+                ) : (
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed">{reply.body}</p>
+                )}
               </div>
             ))}
             <div ref={threadEndRef} />

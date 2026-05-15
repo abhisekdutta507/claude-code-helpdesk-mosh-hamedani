@@ -46,6 +46,7 @@ export type TicketDetail = {
 export type Reply = {
   id: string;
   body: string;
+  bodyHtml: string | null;
   createdAt: string;
   fromEmail: string | null;
   author: Agent | null;
