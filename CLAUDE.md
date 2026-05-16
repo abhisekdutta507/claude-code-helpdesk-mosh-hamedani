@@ -131,6 +131,10 @@ Trigger it after implementing a new UI feature or API-backed workflow, or when e
 
 Tests use ports 3001 (backend) and 5174 (frontend) to avoid conflicting with dev servers. Config is in `frontend/.env.test` and `backend/.env.test`.
 
+### .env.test and DATABASE_URL
+
+**Do NOT set `DATABASE_URL` in `backend/.env.test`** — this file is committed to the repo. The test `DATABASE_URL` must be defined in the local (uncommitted) `backend/.env` file so credentials are never exposed. Each developer configures their own test database URL locally.
+
 ### Sign-out test isolation
 
 `authClient.signOut()` deletes the session row from the DB. Any test that calls sign-out **must** use `test.use({ storageState: { cookies: [], origins: [] } })` and log in fresh — sharing the pre-authed `admin.json` session would invalidate concurrent tests.
